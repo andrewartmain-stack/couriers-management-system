@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getAuthHeaders } from "../utils/index";
 import Button from "../components/Button";
 import { MdError, MdEdit, MdCheck, MdClose, MdNavigateBefore, MdNavigateNext, MdCheckCircle, MdPersonAdd } from "react-icons/md";
@@ -94,7 +94,6 @@ const UnassignedRecordsDetail = () => {
 
     const { reportId } = useParams();
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
     const totalPages = Math.ceil(records.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -769,7 +768,7 @@ const UnassignedRecordsDetail = () => {
                 <div className={`
                 fixed top-5 right-5 z-100
                 max-w-sm w-full
-                            ${alert.type === "error" ? "bg-[var(--error-bg)] text-[var(--error-text)]" : "bg-green-100 text-green-700"}
+                            ${alert.type === "error" ? "bg-(--error-bg) text-(--error-text)" : "bg-green-100 text-green-700"}
                 shadow-xl
                 rounded-2xl p-4
                 animate-toast
