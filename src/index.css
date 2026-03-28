@@ -1,0 +1,72 @@
+@import 'tailwindcss';
+
+:root {
+  /* Light Theme Backgrounds */
+  --bg-app: #fdfdfd;
+
+  /* Text */
+  --text-primary: #00050f;
+  --text-secondary: #a8a8a8;
+
+  /* Accent (оставляем яркими) */
+  --accent-dark: #1f1f22;
+
+  /* Borders */
+  --border-default: #f4f0ef;
+
+  /* Card */
+  --card-gradient-start: #3b82f6; /* фиолетовый */
+  --card-gradient-end: #53b4fe; /* синий */
+  --card-wave-color: rgba(255, 255, 255, 0.15); /* для волны */
+
+  --card2-gradient-start: #ffffff;
+  --card2-gradient-end: #ffffff;
+  --card2-wave-color: #f9f9f9;
+
+  /* Error */
+  --error-bg: #ffd5d9;
+  --error-text: #ed7a83;
+}
+
+body {
+  font-family: 'Lexend', sans-serif;
+  color: var(--text-primary);
+  overflow-y: hidden;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-lifecycle {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  85% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+}
+
+.animate-toast {
+  animation: toast-lifecycle 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

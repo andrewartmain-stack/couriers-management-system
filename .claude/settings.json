@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r export.*UserPlus c:/Users/andre/Desktop/couriers-management-system/node_modules/@phosphor-icons/react/dist/csr/UserPlus.d.ts)"
+    ]
+  }
+}
