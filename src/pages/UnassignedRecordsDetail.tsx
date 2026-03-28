@@ -70,13 +70,6 @@ interface EditingCell {
     value: string;
 }
 
-interface UpdateRecordDto {
-    id: number;
-    newCtr: number | null;
-    newCommission: number | null;
-    newCourierTotal: number;
-}
-
 interface ModifiedFields {
     [recordId: number]: {
         ctr?: boolean;
@@ -102,12 +95,6 @@ const UnassignedRecordsDetail = () => {
     const { reportId } = useParams();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const managerName = searchParams.get('managerName');
-
-    const modifiedFieldsCount = Object.values(modifiedFields).reduce((total, fields) => {
-        return total + (fields.ctr ? 1 : 0) + (fields.commission ? 1 : 0);
-    }, 0);
-
     const totalPages = Math.ceil(records.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;

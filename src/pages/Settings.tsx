@@ -3,8 +3,6 @@ const Settings = () => {
     const email = localStorage.getItem('user_email') ?? '';
     const role = localStorage.getItem('user_role') ?? '';
     const userId = localStorage.getItem('user_id') ?? '';
-    const initials = username.slice(0, 2).toUpperCase();
-
     const fields = [
         { label: 'Username', value: username },
         { label: 'Email address', value: email },

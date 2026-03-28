@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { MdError, MdCheckCircle } from "react-icons/md";
-import Button from "../components/Button";
 import Card from "../components/Card";
 import { AddManagerModal } from "../components/AddManagerModal";
 import { useAppData } from '../context/AppContext';

@@ -5,7 +5,7 @@ import { getAuthHeaders } from "../utils/index";
 import Button from "../components/Button";
 import Card from "../components/Card";
 
-import { MdError, MdCheckCircle } from "react-icons/md";
+import { MdError } from "react-icons/md";
 
 import type { Report } from "../types";
 import { StartNewReportModal } from "../components/StartNewReportModal";

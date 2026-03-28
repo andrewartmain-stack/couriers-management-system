@@ -52,7 +52,7 @@ export const AddManagerModal: FC<AddManagerModalPropsInterface> = ({ onClose, ad
                 <div className="flex justify-end gap-2 mt-6">
                     <Button
                         onClickAction={onClose}
-                        type="error"
+                        variant="error"
                     >
                         Cancel
                     </Button>

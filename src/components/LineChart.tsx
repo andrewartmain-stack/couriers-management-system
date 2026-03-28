@@ -64,8 +64,6 @@ export const LineChart = ({
     const yoy = prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : 0;
     const fmt = (v: number) => dataType === 'revenue' ? `${currencySymbol}${v.toLocaleString()}` : v.toLocaleString();
 
-    const activeColor = city !== 'all' ? citiesData.find(c => c.city === city)?.color : undefined;
-
     const curDatasets = sliced.map(c => ({
         label: c.city,
         data: c.cur,

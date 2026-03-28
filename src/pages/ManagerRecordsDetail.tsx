@@ -89,7 +89,7 @@ const ITEMS_PER_PAGE = 20;
 const ManagerRecordsDetail = () => {
     const [active, setActive] = useState<string>("Bolt");
     const [records, setRecords] = useState<CourierRecord[]>([]);
-    const [originalRecords, setOriginalRecords] = useState<CourierRecord[]>([]);
+    const [_originalRecords, setOriginalRecords] = useState<CourierRecord[]>([]);
     const [modifiedFields, setModifiedFields] = useState<ModifiedFields>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);

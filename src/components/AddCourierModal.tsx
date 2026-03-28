@@ -173,7 +173,7 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
                 <div className="flex justify-end gap-2 mt-6">
                     <Button
                         onClickAction={onClose}
-                        type="error"
+                        variant="error"
                     >
                         Cancel
                     </Button>

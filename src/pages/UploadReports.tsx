@@ -401,7 +401,7 @@ const UploadReports = () => {
             </div>
 
             <div className="fixed bottom-10 right-10">
-                <Button type="success" disabled={!isUserAllowedToGoNext()} onClickAction={() => navigate(`/reports/${reportId}/reports-by-managers`)}>
+                <Button variant="success" disabled={!isUserAllowedToGoNext()} onClickAction={() => navigate(`/reports/${reportId}/reports-by-managers`)}>
                     Go to Manager Reports
                 </Button>
             </div>

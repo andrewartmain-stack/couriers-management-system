@@ -193,7 +193,7 @@ export const AddAccountModal: FC<AddAccountModalPropsInterface> = ({
                 </div>
 
                 <div className="flex justify-end gap-2 mt-6">
-                    <Button onClickAction={onClose} type="error">
+                    <Button onClickAction={onClose} variant="error">
                         Cancel
                     </Button>
                     <Button onClickAction={handleSubmit}>Save</Button>
