@@ -4,7 +4,7 @@ import Button from "../components/Button";
 import { MdError, MdEdit, MdCheck, MdClose, MdNavigateBefore, MdNavigateNext, MdCheckCircle } from "react-icons/md";
 
 import Spinner from "../components/Spinner";
-import { getAuthHeaders, getAuthHeadersNoContentType } from '../utils/index';
+import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from '../utils/index';
 
 interface BoltRecord {
     UID: string;
@@ -142,7 +142,7 @@ const ManagerRecordsDetail = () => {
 
                 const platform = active.toLowerCase();
                 const response = await fetch(
-                    `https://99c3-109-166-138-69.ngrok-free.app/api/records/${platform}/manager-report/${managerId}`,
+                    `${BASE_API}/records/${platform}/manager-report/${managerId}`,
                     {
                         headers: getAuthHeadersNoContentType(),
                     }
@@ -329,7 +329,7 @@ const ManagerRecordsDetail = () => {
             console.log("Saving updates:", updates);
 
             const response = await fetch(
-                `https://99c3-109-166-138-69.ngrok-free.app/api/records/bulk-update/report/${reportId}/manager-report/${managerId}`,
+                `${BASE_API}/records/bulk-update/report/${reportId}/manager-report/${managerId}`,
                 {
                     method: "PATCH",
                     headers: getAuthHeaders(),

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getAuthHeaders, getAuthHeadersNoContentType } from "../utils/index";
+import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from "../utils/index";
 import Card from "../components/Card";
 import { MdError, MdCheckCircle, MdUploadFile } from "react-icons/md";
 
@@ -84,7 +84,7 @@ const UploadReports = () => {
         setLoading(prev => ({ ...prev, [platformName]: true }));
 
         try {
-            const res = await fetch(`https://99c3-109-166-138-69.ngrok-free.app/api/reports/csv/upload/${platformName}`, {
+            const res = await fetch(`${BASE_API}/reports/csv/upload/${platformName}`, {
                 method: "POST",
                 headers: getAuthHeadersNoContentType(),
                 body: formData,
@@ -145,7 +145,7 @@ const UploadReports = () => {
     const fetchReportData = async () => {
         try {
             const response = await fetch(
-                `https://99c3-109-166-138-69.ngrok-free.app/api/reports/${reportId}`,
+                `${BASE_API}/reports/${reportId}`,
                 { headers: getAuthHeaders() }
             );
 

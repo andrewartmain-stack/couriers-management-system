@@ -7,9 +7,7 @@ import { EditTagModal } from "../components/EditTagModal";
 import { DeletionModal } from "../components/DeletionModal";
 import { useAppData } from '../context/AppContext';
 import type { Tag } from "../types";
-import { getAuthHeaders } from '../utils/index';
-
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 
 const Tags = () => {
     const { tags, refresh } = useAppData();
@@ -32,7 +30,7 @@ const Tags = () => {
     const addTag = async (name: string, description: string) => {
         if (!name) return showAlert('error', 'Please complete name field');
         try {
-            const res = await fetch(`${BASE}/tags`, {
+            const res = await fetch(`${BASE_API}/tags`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ name, description }),
@@ -53,7 +51,7 @@ const Tags = () => {
     const editTag = async (tagId: number, name: string, description: string) => {
         if (!name) return showAlert('error', 'Please complete name field');
         try {
-            const res = await fetch(`${BASE}/tags/${tagId}`, {
+            const res = await fetch(`${BASE_API}/tags/${tagId}`, {
                 method: 'PATCH',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ name, description }),
@@ -74,7 +72,7 @@ const Tags = () => {
 
     const deleteTag = async (tagId: number) => {
         try {
-            const res = await fetch(`${BASE}/tags/${tagId}`, {
+            const res = await fetch(`${BASE_API}/tags/${tagId}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });

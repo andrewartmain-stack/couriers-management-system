@@ -1,14 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { Courier, City, Account, Manager, Tag } from '../types/index';
-import { getAuthHeaders } from '../utils/index';
-
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 const getHeaders = () => {
     const headers = getAuthHeaders();
     delete headers['Content-Type'];
     return headers;
 };
-const get = (path: string) => fetch(`${BASE}${path}`, { headers: getHeaders() }).then(r => r.json());
+const get = (path: string) => fetch(`${BASE_API}${path}`, { headers: getHeaders() }).then(r => r.json());
 
 type AppData = {
     couriers: Courier[];

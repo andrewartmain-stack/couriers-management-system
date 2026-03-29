@@ -3,9 +3,7 @@ import { MdError } from "react-icons/md";
 import { AddCityModal } from "../components/AddCityModal";
 import Card from "../components/Card";
 import { useAppData } from '../context/AppContext';
-import { getAuthHeaders } from '../utils/index';
-
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 
 const Cities = () => {
     const { cities, couriers, refresh } = useAppData();
@@ -24,7 +22,7 @@ const Cities = () => {
     const addCity = async (name: string) => {
         if (!name) return showAlert('error', 'Please complete name field');
         try {
-            const res = await fetch(`${BASE}/cities`, {
+            const res = await fetch(`${BASE_API}/cities`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ name }),

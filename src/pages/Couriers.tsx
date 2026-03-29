@@ -10,10 +10,9 @@ import Spinner from "../components/Spinner";
 import { DeletionModal } from "../components/DeletionModal";
 import { useAppData } from '../context/AppContext';
 import type { Courier } from '../types/index'
-import { getAuthHeaders } from '../utils/index';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 
 const ITEMS_PER_PAGE = 20;
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
 
 const Couriers = () => {
     const { couriers, cities, managers, tags, loading, refresh } = useAppData();
@@ -102,7 +101,7 @@ const Couriers = () => {
         const body = buildBody(...args);
         if (!body) return showAlert('error', 'Please complete all the fields');
         try {
-            const res = await fetch(`${BASE}/couriers`, {
+            const res = await fetch(`${BASE_API}/couriers`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(body),
@@ -125,7 +124,7 @@ const Couriers = () => {
         if (!body) return showAlert('error', 'Please complete all the fields');
         console.log('editCourier body:', JSON.stringify(body));
         try {
-            const res = await fetch(`${BASE}/couriers/${courierId}`, {
+            const res = await fetch(`${BASE_API}/couriers/${courierId}`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(body),
@@ -146,7 +145,7 @@ const Couriers = () => {
 
     const deleteCourier = async (id: number) => {
         try {
-            const res = await fetch(`${BASE}/couriers/${id}`, {
+            const res = await fetch(`${BASE_API}/couriers/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });

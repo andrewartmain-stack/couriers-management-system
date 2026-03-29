@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { NavLink, useParams, useNavigate } from "react-router-dom";
-import { getAuthHeaders } from "../utils/index";
+import { getAuthHeaders, BASE_API } from "../utils/index";
 
 import Button from "../components/Button";
 import Card from "../components/Card";
@@ -42,12 +42,12 @@ const ManagerReports = () => {
         const fetchData = async () => {
             try {
                 const reportsResponse = await fetch(
-                    `https://99c3-109-166-138-69.ngrok-free.app/api/manager-reports/report/${reportId}`,
+                    `${BASE_API}/manager-reports/report/${reportId}`,
                     { headers: getAuthHeaders() }
                 );
 
                 const managersResponse = await fetch(
-                    "https://99c3-109-166-138-69.ngrok-free.app/api/managers",
+                    "${BASE_API}/managers",
                     { headers: getAuthHeaders() }
                 );
 

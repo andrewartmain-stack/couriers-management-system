@@ -1,11 +1,9 @@
 import { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
-import { getAuthHeaders } from '../utils/index';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 import Spinner from '../components/Spinner';
 import Card from '../components/Card';
 import type { Report, ReportByManager } from '../types';
-
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
 
 const MyReports = () => {
     const [myReports, setMyReports] = useState<Array<{ report: Report; managerReport: ReportByManager }>>([]);
@@ -20,7 +18,7 @@ const MyReports = () => {
 
         const fetchReports = async () => {
             try {
-                const res = await fetch(`${BASE}/reports`, { headers: getAuthHeaders() });
+                const res = await fetch(`${BASE_API}/reports`, { headers: getAuthHeaders() });
                 const reports: Report[] = await res.json();
                 const sorted = [...reports].sort((a, b) =>
                     new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
@@ -28,7 +26,7 @@ const MyReports = () => {
 
                 const results = await Promise.all(
                     sorted.map(async (report) => {
-                        const mrRes = await fetch(`${BASE}/manager-reports/report/${report.id}`, { headers: getAuthHeaders() });
+                        const mrRes = await fetch(`${BASE_API}/manager-reports/report/${report.id}`, { headers: getAuthHeaders() });
                         const mrs: ReportByManager[] = await mrRes.json();
                         const mine = mrs.find(mr => mr.managerId === myManagerId);
                         return mine ? { report, managerReport: mine } : null;

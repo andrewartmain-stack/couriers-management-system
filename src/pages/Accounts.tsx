@@ -8,10 +8,9 @@ import { EditAccountModal } from "../components/EditAccountModal";
 import { DeletionModal } from '../components/DeletionModal'
 import { useAppData } from '../context/AppContext';
 import type { Account } from '../types/index'
-import { getAuthHeaders } from '../utils/index';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 
 const ITEMS_PER_PAGE = 20;
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
 
 const Accounts = () => {
     const { accounts, couriers, loading, refresh } = useAppData();
@@ -77,7 +76,7 @@ const Accounts = () => {
         const body = buildAccountBody(...args);
         if (!body) return showAlert('error', 'Please complete all the fields');
         try {
-            const res = await fetch(`${BASE}/accounts`, {
+            const res = await fetch(`${BASE_API}/accounts`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(body),
@@ -99,7 +98,7 @@ const Accounts = () => {
         const body = buildAccountBody(...args);
         if (!body) return showAlert('error', 'Please complete all the fields');
         try {
-            const res = await fetch(`${BASE}/accounts/${accountId}`, {
+            const res = await fetch(`${BASE_API}/accounts/${accountId}`, {
                 method: 'PUT',
                 headers: getAuthHeaders(),
                 body: JSON.stringify(body),
@@ -120,7 +119,7 @@ const Accounts = () => {
 
     const deleteAccount = async (id: number) => {
         try {
-            const res = await fetch(`${BASE}/accounts/${id}`, {
+            const res = await fetch(`${BASE_API}/accounts/${id}`, {
                 method: 'DELETE',
                 headers: getAuthHeaders()
             });

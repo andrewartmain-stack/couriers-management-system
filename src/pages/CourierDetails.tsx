@@ -5,7 +5,7 @@ import { FaFileContract, FaIdCard, FaFileAlt } from "react-icons/fa"
 import type { Courier, Tag, City, Manager, Account } from "../types"
 import Spinner from "../components/Spinner"
 import Card from "../components/Card"
-import { getAuthHeaders, getAuthHeadersNoContentType } from '../utils/index';
+import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from '../utils/index';
 import logoBolt from "../../public/bolt-1.svg"
 import logoWolt from '../../public/idcxOwdB80_1769177945180.jpeg'
 import logoGlovo from '../../public/idgSGGe-zp_1769177931923.jpeg'
@@ -101,13 +101,13 @@ const CourierDetails = () => {
             let endpoint = '';
             switch (category) {
                 case 'TRC':
-                    endpoint = `https://99c3-109-166-138-69.ngrok-free.app/api/files/upload-trc/courier/${courierId}`;
+                    endpoint = `${BASE_API}/files/upload-trc/courier/${courierId}`;
                     break;
                 case 'CONTRACT':
-                    endpoint = `https://99c3-109-166-138-69.ngrok-free.app/api/files/upload-contract/courier/${courierId}`;
+                    endpoint = `${BASE_API}/files/upload-contract/courier/${courierId}`;
                     break;
                 case 'GENERAL':
-                    endpoint = `https://99c3-109-166-138-69.ngrok-free.app/api/files/upload-general-file/courier/${courierId}`;
+                    endpoint = `${BASE_API}/files/upload-general-file/courier/${courierId}`;
                     break;
             }
 
@@ -138,7 +138,7 @@ const CourierDetails = () => {
     const handleFileDownload = async (fileUrl: string, originalFileName: string) => {
         try {
             const response = await fetch(
-                `https://99c3-109-166-138-69.ngrok-free.app/api/files/download?file-url=${encodeURIComponent(fileUrl)}`,
+                `${BASE_API}/files/download?file-url=${encodeURIComponent(fileUrl)}`,
                 {
                     headers: getAuthHeadersNoContentType()
                 }
@@ -169,7 +169,7 @@ const CourierDetails = () => {
 
         try {
             const response = await fetch(
-                `https://99c3-109-166-138-69.ngrok-free.app/api/files/delete-file/${fileId}`,
+                `${BASE_API}/files/delete-file/${fileId}`,
                 {
                     method: 'DELETE',
                     headers: getAuthHeaders()
@@ -205,22 +205,22 @@ const CourierDetails = () => {
             try {
                 setLoading(true);
                 const [couriersResponse, tagsResponse, citiesResponse, managersResponse, accountsResponse, filesResponse] = await Promise.all([
-                    fetch(`https://99c3-109-166-138-69.ngrok-free.app/api/couriers/${courierId}`, {
+                    fetch(`${BASE_API}/couriers/${courierId}`, {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('https://99c3-109-166-138-69.ngrok-free.app/api/tags', {
+                    fetch('${BASE_API}/tags', {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('https://99c3-109-166-138-69.ngrok-free.app/api/cities', {
+                    fetch('${BASE_API}/cities', {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('https://99c3-109-166-138-69.ngrok-free.app/api/managers', {
+                    fetch('${BASE_API}/managers', {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('https://99c3-109-166-138-69.ngrok-free.app/api/accounts', {
+                    fetch('${BASE_API}/accounts', {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch(`https://99c3-109-166-138-69.ngrok-free.app/api/files/courier/${courierId}`, {
+                    fetch(`${BASE_API}/files/courier/${courierId}`, {
                         headers: getAuthHeadersNoContentType()
                     })
                 ]);

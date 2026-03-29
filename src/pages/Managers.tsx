@@ -3,9 +3,7 @@ import { MdError, MdCheckCircle } from "react-icons/md";
 import Card from "../components/Card";
 import { AddManagerModal } from "../components/AddManagerModal";
 import { useAppData } from '../context/AppContext';
-import { getAuthHeaders } from '../utils/index';
-
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 
 const Managers = () => {
     const { managers, refresh } = useAppData();
@@ -25,7 +23,7 @@ const Managers = () => {
         if (!firstName || !lastName || !phoneNumber || !email || !prefix)
             return showAlert('error', 'Please complete all the fields');
         try {
-            const res = await fetch(`${BASE}/managers`, {
+            const res = await fetch(`${BASE_API}/managers`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ firstname: firstName, lastname: lastName, phoneNumber, email, prefix }),

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getAuthHeaders } from "../utils/index";
+import { getAuthHeaders, BASE_API } from "../utils/index";
 import Button from "../components/Button";
 import { MdError, MdEdit, MdCheck, MdClose, MdNavigateBefore, MdNavigateNext, MdCheckCircle, MdPersonAdd } from "react-icons/md";
 
@@ -126,7 +126,7 @@ const UnassignedRecordsDetail = () => {
 
                 const platform = active.toLowerCase();
                 const response = await fetch(
-                    `https://99c3-109-166-138-69.ngrok-free.app/api/records/${platform}/report/${reportId}/new-accounts`,
+                    `${BASE_API}/records/${platform}/report/${reportId}/new-accounts`,
                     { headers: getAuthHeaders() }
                 );
 

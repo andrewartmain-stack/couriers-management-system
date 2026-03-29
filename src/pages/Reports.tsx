@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAuthHeaders } from "../utils/index";
+import { getAuthHeaders, BASE_API } from "../utils/index";
 
 import Button from "../components/Button";
 import Card from "../components/Card";
@@ -41,7 +41,7 @@ const Reports = () => {
         }
 
         try {
-            const response = await fetch("https://99c3-109-166-138-69.ngrok-free.app/api/reports", {
+            const response = await fetch("${BASE_API}/reports", {
                 method: "POST",
                 headers: getAuthHeaders(),
                 body: JSON.stringify({
@@ -69,7 +69,7 @@ const Reports = () => {
     const closeReportHandler = async (reportId: number) => {
         try {
             const response = await fetch(
-                `https://99c3-109-166-138-69.ngrok-free.app/api/reports/close/${reportId}`,
+                `${BASE_API}/reports/close/${reportId}`,
                 {
                     method: "PATCH",
                     headers: getAuthHeaders(),
@@ -101,7 +101,7 @@ const Reports = () => {
         const fetchData = async () => {
             try {
                 const response = await fetch(
-                    "https://99c3-109-166-138-69.ngrok-free.app/api/reports",
+                    "${BASE_API}/reports",
                     { headers: getAuthHeaders() }
                 );
 

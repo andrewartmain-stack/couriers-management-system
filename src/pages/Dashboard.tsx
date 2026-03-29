@@ -17,10 +17,8 @@ import { AddManagerModal } from "../components/AddManagerModal";
 import { AddTagModal } from "../components/AddTagModal";
 import { AddCityModal } from "../components/AddCityModal";
 import { useAppData } from '../context/AppContext';
-import { getAuthHeaders } from '../utils/index';
+import { getAuthHeaders, BASE_API } from '../utils/index';
 import type { Report, ReportByManager } from '../types';
-
-const BASE = 'https://99c3-109-166-138-69.ngrok-free.app/api';
 
 const PLATFORM_COLORS = ['#10b981', '#3b82f6', '#f59e0b']; // Bolt=green, Wolt=blue, Glovo=yellow
 const CITY_COLORS = ['#4f46e5', '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
@@ -56,7 +54,7 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const res = await fetch(`${BASE}/reports`, { headers: getAuthHeaders() });
+                const res = await fetch(`${BASE_API}/reports`, { headers: getAuthHeaders() });
                 const data: Report[] = await res.json();
                 const sorted = [...data].sort((a, b) =>
                     new Date(a.startedAt).getTime() - new Date(b.startedAt).getTime()
@@ -66,8 +64,8 @@ const Dashboard = () => {
                 const [last, prev] = [sorted[sorted.length - 1], sorted[sorted.length - 2]];
 
                 const [lastMR, prevMR] = await Promise.all([
-                    last ? fetch(`${BASE}/manager-reports/report/${last.id}`, { headers: getAuthHeaders() }).then(r => r.json()) : Promise.resolve([]),
-                    prev ? fetch(`${BASE}/manager-reports/report/${prev.id}`, { headers: getAuthHeaders() }).then(r => r.json()) : Promise.resolve([]),
+                    last ? fetch(`${BASE_API}/manager-reports/report/${last.id}`, { headers: getAuthHeaders() }).then(r => r.json()) : Promise.resolve([]),
+                    prev ? fetch(`${BASE_API}/manager-reports/report/${prev.id}`, { headers: getAuthHeaders() }).then(r => r.json()) : Promise.resolve([]),
                 ]);
 
                 setManagerReports(lastMR);
@@ -168,7 +166,7 @@ const Dashboard = () => {
 
     const post = async (path: string, body: object, successMsg: string, onClose: () => void) => {
         try {
-            const res = await fetch(`${BASE}${path}`, {
+            const res = await fetch(`${BASE_API}${path}`, {
                 method: 'POST', headers: getAuthHeaders(), body: JSON.stringify(body),
             });
             if (res.ok) { refresh(); showAlert('success', successMsg); onClose(); setValidationErrors(null); }
