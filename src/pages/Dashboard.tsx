@@ -179,9 +179,9 @@ const Dashboard = () => {
             return showAlert('error', 'Please complete all the fields');
         post('/couriers', { firstname: firstName, lastname: lastName, phoneNumber, nationality, cityId, managerId, ctr, commission }, 'Courier was added successfully', () => setIsAddCourierModalOpen(false));
     };
-    const addManager = (firstName: string, lastName: string, phoneNumber: string, email: string, prefix: string) => {
-        if (!firstName || !lastName || !phoneNumber || !email || !prefix) return showAlert('error', 'Please complete all the fields');
-        post('/managers', { firstname: firstName, lastname: lastName, phoneNumber, email, prefix }, 'Manager was added successfully', () => setIsAddManagerModalOpen(false));
+    const addManager = (firstName: string, lastName: string, phoneNumber: string, email: string, prefix: string, commission: number) => {
+        if (!firstName || !lastName || !phoneNumber || !email || !prefix || isNaN(commission)) return showAlert('error', 'Please complete all the fields');
+        post('/managers', { firstname: firstName, lastname: lastName, phoneNumber, email, prefix, managerCommission: commission }, 'Manager was added successfully', () => setIsAddManagerModalOpen(false));
     };
     const addTag = (name: string) => { if (!name) return showAlert('error', 'Please complete name field'); post('/tags', { name }, 'Tag was added successfully', () => setIsAddTagModalOpen(false)); };
     const addCity = (name: string) => { if (!name) return showAlert('error', 'Please complete name field'); post('/cities', { name }, 'City was added successfully', () => setIsAddCityModalOpen(false)); };

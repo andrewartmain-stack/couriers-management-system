@@ -28,6 +28,7 @@ export type Manager = {
   phoneNumber: string;
   email: string;
   prefix: string;
+  managerCommission: number;
 };
 
 export type Account = {

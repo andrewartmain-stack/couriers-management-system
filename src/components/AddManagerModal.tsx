@@ -5,7 +5,7 @@ import Input from "./Input";
 
 interface AddManagerModalPropsInterface {
     onClose: () => void;
-    addManager: (firstName: string, lastName: string, email: string, phoneNumber: string, prefix: string) => void;
+    addManager: (firstName: string, lastName: string, email: string, phoneNumber: string, prefix: string, commission: number) => void;
     validationErrors: Record<string, string> | null;
 }
 
@@ -15,7 +15,8 @@ export const AddManagerModal: FC<AddManagerModalPropsInterface> = ({ onClose, ad
     const [lastNameInput, setLastNameInput] = useState<string>('');
     const [phoneNumberInput, setPhoneNumberInput] = useState<string>('');
     const [emailInput, setEmailInput] = useState<string>('');
-    const [prefixInput, setPrefixInput] = useState<string>('')
+    const [prefixInput, setPrefixInput] = useState<string>('');
+    const [commissionInput, setCommissionInput] = useState<string>('');
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -47,6 +48,9 @@ export const AddManagerModal: FC<AddManagerModalPropsInterface> = ({ onClose, ad
                     <label htmlFor="prefix" className="text-sm -mb-1.25">Prefix</label>
                     <Input nameValue="prefix" placeholderValue="MA" inputValue={prefixInput} onChangeAction={(e: any) => setPrefixInput(e.target.value)} required />
                     {validationErrors?.prefix && <p className="text-red-400 text-sm">{validationErrors.prefix}</p>}
+                    <label htmlFor="commission" className="text-sm -mb-1.25">Commission (%)</label>
+                    <Input nameValue="commission" placeholderValue="10" inputValue={commissionInput} onChangeAction={(e: any) => setCommissionInput(e.target.value)} type="number" required />
+                    {validationErrors?.commission && <p className="text-red-400 text-sm">{validationErrors.commission}</p>}
                 </div>
 
                 <div className="flex justify-end gap-2 mt-6">
@@ -57,7 +61,7 @@ export const AddManagerModal: FC<AddManagerModalPropsInterface> = ({ onClose, ad
                         Cancel
                     </Button>
                     <Button
-                        onClickAction={() => addManager(firstNameInput.trim(), lastNameInput.trim(), phoneNumberInput.trim(), emailInput.trim(), prefixInput.trim())}
+                        onClickAction={() => addManager(firstNameInput.trim(), lastNameInput.trim(), phoneNumberInput.trim(), emailInput.trim(), prefixInput.trim(), parseFloat(commissionInput))}
                     >
                         Save
                     </Button>

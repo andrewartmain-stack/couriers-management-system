@@ -19,14 +19,14 @@ const Managers = () => {
         setTimeout(() => setAlert(a => ({ ...a, on: false })), 3000);
     };
 
-    const addManager = async (firstName: string, lastName: string, phoneNumber: string, email: string, prefix: string) => {
-        if (!firstName || !lastName || !phoneNumber || !email || !prefix)
+    const addManager = async (firstName: string, lastName: string, phoneNumber: string, email: string, prefix: string, commission: number) => {
+        if (!firstName || !lastName || !phoneNumber || !email || !prefix || isNaN(commission))
             return showAlert('error', 'Please complete all the fields');
         try {
             const res = await fetch(`${BASE_API}/managers`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ firstname: firstName, lastname: lastName, phoneNumber, email, prefix }),
+                body: JSON.stringify({ firstname: firstName, lastname: lastName, phoneNumber, email, prefix, managerCommission: commission }),
             });
             if (res.ok) {
                 refresh();
@@ -88,6 +88,10 @@ const Managers = () => {
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">Prefix</span>
                                     <span>{manager.prefix}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">Commission</span>
+                                    <span>{manager.managerCommission}%</span>
                                 </div>
                             </div>
 
