@@ -47,7 +47,7 @@ const ManagerReports = () => {
                 );
 
                 const managersResponse = await fetch(
-                    "${BASE_API}/managers",
+                    `${BASE_API}/managers`,
                     { headers: getAuthHeaders() }
                 );
 

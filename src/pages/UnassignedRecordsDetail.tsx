@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getAuthHeaders, BASE_API } from "../utils/index";
+import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from "../utils/index";
 import Button from "../components/Button";
 import { MdError, MdEdit, MdCheck, MdClose, MdNavigateBefore, MdNavigateNext, MdCheckCircle, MdPersonAdd } from "react-icons/md";
+import { AddCourierModal } from "../components/AddCourierModal";
 
 import Spinner from "../components/Spinner";
+import type { Courier, City, Manager, Tag, ReportByManager } from "../types/index";
 
 interface BoltRecord {
     UID: string;
@@ -82,6 +84,8 @@ const ITEMS_PER_PAGE = 20;
 const UnassignedRecordsDetail = () => {
     const [active, setActive] = useState<string>("Bolt");
     const [records, setRecords] = useState<CourierRecord[]>([]);
+    const [clickedRecordAssignId, setClickedRecordAssignId] = useState<number | null>(null);
+    const [clickedRecordAssignUUID, setClickedRecordAssignUUID] = useState<string | null>(null);
     const [modifiedFields, setModifiedFields] = useState<ModifiedFields>({});
     const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -91,6 +95,18 @@ const UnassignedRecordsDetail = () => {
         type: "error" | "success";
         message: string;
     }>({ isActive: false, type: "error", message: "Something went wrong" });
+
+    const [assignModalRecord, setAssignModalRecord] = useState<CourierRecord | null>(null);
+    const [assignStep, setAssignStep] = useState<'choice' | 'existing' | 'create'>('choice');
+    const [couriers, setCouriers] = useState<Courier[]>([]);
+    const [cities, setCities] = useState<City[]>([]);
+    const [managers, setManagers] = useState<Manager[]>([]);
+    const [managerReports, setManagerReports] = useState<ReportByManager[]>([]);
+    const [tagsData, setTagsData] = useState<Tag[]>([]);
+    const [courierSearch, setCourierSearch] = useState('');
+    const [selectedCourier, setSelectedCourier] = useState<Courier | null>(null);
+    const [assigning, setAssigning] = useState(false);
+    const [createValidationErrors, setCreateValidationErrors] = useState<Record<string, string> | null>(null);
 
     const { reportId } = useParams();
     const navigate = useNavigate();
@@ -353,6 +369,193 @@ const UnassignedRecordsDetail = () => {
         return 0;
     };
 
+    const getRecordDisplayName = (record: CourierRecord): string => {
+        if (isBoltRecord(record)) return `${record.firstname} ${record.lastname} (${record.UID})`;
+        if (isGlovoRecord(record)) return record.name;
+        if (isWoltRecord(record)) return record.name;
+        return 'Unknown';
+    };
+
+    const handleAssignClick = (record: CourierRecord) => {
+        setAssignModalRecord(record);
+        setAssignStep('choice');
+        setSelectedCourier(null);
+        setCourierSearch('');
+        setCreateValidationErrors(null);
+
+        Promise.all([
+            fetch(`${BASE_API}/couriers`, { headers: getAuthHeadersNoContentType() }).then(r => r.json()),
+            fetch(`${BASE_API}/cities`, { headers: getAuthHeadersNoContentType() }).then(r => r.json()),
+            fetch(`${BASE_API}/managers`, { headers: getAuthHeadersNoContentType() }).then(r => r.json()),
+            fetch(`${BASE_API}/tags`, { headers: getAuthHeadersNoContentType() }).then(r => r.json()),
+            fetch(`${BASE_API}/manager-reports/report/${reportId}`, { headers: getAuthHeadersNoContentType() }).then(r => r.json()),
+        ]).then(([c, ci, m, t, mr]) => {
+            setCouriers(c);
+            setCities(ci);
+            setManagers(m);
+            setTagsData(t);
+            setManagerReports(mr);
+        }).catch(console.error);
+    };
+
+    const handleAssignToExisting = async () => {
+        if (!selectedCourier || !assignModalRecord) return;
+        setAssigning(true);
+        try {
+            const managerReport = managerReports.find(mr => mr.managerId === selectedCourier.managerId);
+            const managerReportId = managerReport?.id;
+            const response = await fetch(
+                `${BASE_API}/records/${clickedRecordAssignId}/account/${clickedRecordAssignUUID}/managerReport/${managerReportId}/courier/${selectedCourier.id}`,
+                { method: 'PATCH', headers: getAuthHeaders() }
+            );
+            if (!response.ok) throw new Error('Failed to assign record');
+            setRecords(prev => prev.filter(r => r.id !== assignModalRecord.id));
+            setAssignModalRecord(null);
+            showAlert('success', 'Record assigned successfully');
+        } catch (e) {
+            showAlert('error', (e as Error).message || 'Failed to assign record');
+        } finally {
+            setAssigning(false);
+        }
+    };
+
+    const handleCreateAndAssign = async (
+        firstname: string, lastname: string, phoneNumber: string, nationality: string,
+        cityId: number | undefined, managerId: number | undefined,
+        ctr: number, commission: number, tagIds: number[]
+    ) => {
+        if (!assignModalRecord) return;
+        setAssigning(true);
+        setCreateValidationErrors(null);
+        try {
+            const managerReport = managerReports.find(mr => mr.managerId === managerId);
+            const managerReportId = managerReport?.id;
+            const createResponse = await fetch(`${BASE_API}/records/${clickedRecordAssignId}/account/${clickedRecordAssignUUID}/managerReport/${managerReportId}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ firstname, lastname, phoneNumber, nationality, cityId, managerId, ctr, commission, tagIds }),
+            });
+            if (!createResponse.ok) {
+                const errorData = await createResponse.json();
+                if (createResponse.status === 400) setCreateValidationErrors(errorData);
+                throw new Error('Failed to create courier');
+            }
+
+            setRecords(prev => prev.filter(r => r.id !== assignModalRecord.id));
+            setAssignModalRecord(null);
+            showAlert('success', 'Courier created and record assigned successfully');
+        } catch (e) {
+            showAlert('error', (e as Error).message || 'Failed to create and assign');
+        } finally {
+            setAssigning(false);
+        }
+    };
+
+    const renderAssignModal = () => {
+        if (!assignModalRecord) return null;
+
+        const filteredCouriers = couriers.filter(c =>
+            `${c.firstname} ${c.lastname}`.toLowerCase().includes(courierSearch.toLowerCase())
+        );
+
+        if (assignStep === 'create') {
+            return (
+                <AddCourierModal
+                    onClose={() => setAssignModalRecord(null)}
+                    addCourier={handleCreateAndAssign}
+                    managersData={managers}
+                    citiesData={cities}
+                    tagsData={tagsData}
+                    validationErrors={createValidationErrors}
+                />
+            );
+        }
+
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+                <div className="absolute inset-0 bg-black/50" onClick={() => setAssignModalRecord(null)} />
+                <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+                    {assignStep === 'choice' && (
+                        <>
+                            <h2 className="text-lg font-semibold mb-1">Assign Record</h2>
+                            <p className="text-sm text-gray-500 mb-6">
+                                {getRecordDisplayName(assignModalRecord)}
+                            </p>
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    onClick={() => setAssignStep('existing')}
+                                    className="flex flex-col items-start gap-1 p-4 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
+                                >
+                                    <span className="font-medium text-gray-900">Assign to Existing Courier</span>
+                                    <span className="text-xs text-gray-500">Link this record to a courier already in the system</span>
+                                </button>
+                                <button
+                                    onClick={() => setAssignStep('create')}
+                                    className="flex flex-col items-start gap-1 p-4 border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition-colors text-left"
+                                >
+                                    <span className="font-medium text-gray-900">Create a Courier and Assign</span>
+                                    <span className="text-xs text-gray-500">Register a new courier and assign this record to them</span>
+                                </button>
+                            </div>
+                            <div className="flex justify-end mt-6">
+                                <Button variant="error" onClickAction={() => setAssignModalRecord(null)}>Cancel</Button>
+                            </div>
+                        </>
+                    )}
+
+                    {assignStep === 'existing' && (
+                        <>
+                            <div className="flex items-center gap-2 mb-4">
+                                <button
+                                    onClick={() => setAssignStep('choice')}
+                                    className="text-gray-400 hover:text-gray-700"
+                                >
+                                    <MdNavigateBefore size={24} />
+                                </button>
+                                <h2 className="text-lg font-semibold">Select Courier</h2>
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search couriers..."
+                                value={courierSearch}
+                                onChange={e => setCourierSearch(e.target.value)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                                {filteredCouriers.length === 0 ? (
+                                    <p className="text-sm text-gray-500 p-4 text-center">No couriers found</p>
+                                ) : (
+                                    filteredCouriers.map(courier => (
+                                        <button
+                                            key={courier.id}
+                                            onClick={() => setSelectedCourier(courier)}
+                                            className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors ${selectedCourier === courier ? 'bg-blue-50' : ''}`}
+                                        >
+                                            <span className="text-sm font-medium text-gray-900">{courier.firstname} {courier.lastname}</span>
+                                            {selectedCourier === courier && <MdCheck size={18} className="text-blue-600" />}
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+                            <div className="flex justify-end gap-2 mt-4">
+                                <Button variant="error" onClickAction={() => setAssignModalRecord(null)}>Cancel</Button>
+                                <Button
+                                    onClickAction={() => {
+                                        handleAssignToExisting()
+                                    }
+                                    }
+                                    disabled={!selectedCourier || assigning}
+                                >
+                                    {assigning ? 'Assigning...' : 'Assign'}
+                                </Button>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        );
+    };
+
     const renderTable = () => {
         if (loading) {
             return <div className="mt-96"><Spinner size={12} /></div>;
@@ -409,7 +612,11 @@ const UnassignedRecordsDetail = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.courierTotal)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <button
-                                                    onClick={() => { }}
+                                                    onClick={() => {
+                                                        setClickedRecordAssignId(record.id);
+                                                        setClickedRecordAssignUUID(record.UID);
+                                                        handleAssignClick(record)
+                                                    }}
                                                     className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                                                 >
                                                     <MdPersonAdd size={16} />
@@ -506,7 +713,7 @@ const UnassignedRecordsDetail = () => {
                                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatCurrency(record.courierTotal)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-center">
                                                 <button
-                                                    onClick={() => { }}
+                                                    onClick={() => handleAssignClick(record)}
                                                     className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                                                 >
                                                     <MdPersonAdd size={16} />
@@ -648,7 +855,7 @@ const UnassignedRecordsDetail = () => {
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.courierTotal)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-center">
                                                 <button
-                                                    onClick={() => { }}
+                                                    onClick={() => handleAssignClick(record)}
                                                     className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                                                 >
                                                     <MdPersonAdd size={16} />
@@ -805,6 +1012,7 @@ const UnassignedRecordsDetail = () => {
             </div>
 
             {renderTable()}
+            {renderAssignModal()}
         </div>
     );
 };

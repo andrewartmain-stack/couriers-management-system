@@ -208,16 +208,16 @@ const CourierDetails = () => {
                     fetch(`${BASE_API}/couriers/${courierId}`, {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('${BASE_API}/tags', {
+                    fetch(`${BASE_API}/tags`, {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('${BASE_API}/cities', {
+                    fetch(`${BASE_API}/cities`, {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('${BASE_API}/managers', {
+                    fetch(`${BASE_API}/managers`, {
                         headers: getAuthHeadersNoContentType()
                     }),
-                    fetch('${BASE_API}/accounts', {
+                    fetch(`${BASE_API}/accounts`, {
                         headers: getAuthHeadersNoContentType()
                     }),
                     fetch(`${BASE_API}/files/courier/${courierId}`, {

@@ -5,9 +5,11 @@ import { MdError, MdEdit, MdCheck, MdClose, MdNavigateBefore, MdNavigateNext, Md
 
 import Spinner from "../components/Spinner";
 import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from '../utils/index';
+import type { Courier, Tag } from '../types';
 
 interface BoltRecord {
     UID: string;
+    personalCourierId: number;
     adjustedEarnings: number;
     city: string;
     commission: number;
@@ -23,6 +25,7 @@ interface BoltRecord {
 
 interface GlovoRecord {
     id: number;
+    personalCourierId: number;
     name: string;
     email: string;
     city: string;
@@ -41,6 +44,7 @@ interface GlovoRecord {
 
 interface WoltRecord {
     id: number;
+    personalCourierId: number;
     name: string;
     payoutID: string;
     taskFees: number;
@@ -89,9 +93,13 @@ const ITEMS_PER_PAGE = 20;
 const ManagerRecordsDetail = () => {
     const [active, setActive] = useState<string>("Bolt");
     const [records, setRecords] = useState<CourierRecord[]>([]);
+    const [couriers, setCouriers] = useState<Courier[]>([]);
+    const [tags, setTags] = useState<Tag[]>([]);
+    const [showNegro, setShowNegro] = useState(false);
     const [_originalRecords, setOriginalRecords] = useState<CourierRecord[]>([]);
     const [modifiedFields, setModifiedFields] = useState<ModifiedFields>({});
     const [currentPage, setCurrentPage] = useState(1);
+    const [ownerSortDirection, setOwnerSortDirection] = useState<'asc' | 'desc' | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
@@ -110,10 +118,53 @@ const ManagerRecordsDetail = () => {
         return total + (fields.ctr ? 1 : 0) + (fields.commission ? 1 : 0);
     }, 0);
 
-    const totalPages = Math.ceil(records.length / ITEMS_PER_PAGE);
+    const negroTagId = tags.find(t => t.name.toLowerCase() === 'negro')?.id ?? null;
+
+    const getCourierName = (id: number) => {
+        const courier = couriers.find(c => c.id === id);
+        return courier ? `${courier.firstname} ${courier.lastname}` : '-';
+    };
+
+    const filteredRecords = records.filter(record => {
+        const courier = couriers.find(c => c.id === record.personalCourierId);
+        const isNegro = courier && negroTagId !== null && courier.tagIds.includes(negroTagId);
+        return showNegro ? isNegro : !isNegro;
+    });
+
+    const sortedRecords = ownerSortDirection
+        ? [...filteredRecords].sort((a, b) => {
+            const nameA = getCourierName(a.personalCourierId);
+            const nameB = getCourierName(b.personalCourierId);
+            return ownerSortDirection === 'asc'
+                ? nameA.localeCompare(nameB)
+                : nameB.localeCompare(nameA);
+        })
+        : filteredRecords;
+
+    const totalPages = Math.ceil(sortedRecords.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
-    const currentRecords = records.slice(startIndex, endIndex);
+    const currentRecords = sortedRecords.slice(startIndex, endIndex);
+
+    useEffect(() => {
+        fetch(`${BASE_API}/couriers`, { headers: getAuthHeadersNoContentType() })
+            .then(r => r.json())
+            .then(setCouriers)
+            .catch(console.error);
+        fetch(`${BASE_API}/tags`, { headers: getAuthHeadersNoContentType() })
+            .then(r => r.json())
+            .then(setTags)
+            .catch(console.error);
+    }, []);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [showNegro]);
+
+    const toggleOwnerSort = () => {
+        setOwnerSortDirection(prev => prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc');
+        setCurrentPage(1);
+    };
 
     const isBoltRecord = (record: CourierRecord): record is BoltRecord => {
         return 'UID' in record;
@@ -153,10 +204,14 @@ const ManagerRecordsDetail = () => {
                 }
 
                 const data = await response.json();
+
+                console.log(data);
+
                 setRecords(data);
                 setOriginalRecords(JSON.parse(JSON.stringify(data)));
                 setModifiedFields({});
                 setCurrentPage(1);
+                setOwnerSortDirection(null);
             } catch (error) {
                 if (error instanceof Error) {
                     console.error(error.message);
@@ -431,19 +486,19 @@ const ManagerRecordsDetail = () => {
 
     const getTotalEarnings = () => {
         if (active === "Bolt") {
-            return records.reduce((sum, r) => {
+            return filteredRecords.reduce((sum, r) => {
                 if (isBoltRecord(r)) return sum + r.courierTotal;
                 return sum;
             }, 0);
         } else if (active === "Glovo") {
-            return records.reduce((sum, r) => {
+            return filteredRecords.reduce((sum, r) => {
                 if (isGlovoRecord(r)) {
                     return sum + r.courierTotal;
                 }
                 return sum;
             }, 0);
         } else if (active === "Wolt") {
-            return records.reduce((sum, r) => {
+            return filteredRecords.reduce((sum, r) => {
                 if (isWoltRecord(r)) return sum + r.courierTotal;
                 return sum;
             }, 0);
@@ -475,6 +530,12 @@ const ManagerRecordsDetail = () => {
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Row #</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UID</th>
+                                    <th
+                                        className="px-6 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider cursor-pointer select-none hover:bg-purple-200"
+                                        onClick={toggleOwnerSort}
+                                    >
+                                        Owner {ownerSortDirection === 'asc' ? '↑' : ownerSortDirection === 'desc' ? '↓' : '↕'}
+                                    </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Adjusted Earnings</th>
@@ -496,7 +557,9 @@ const ManagerRecordsDetail = () => {
                                         <tr key={record.id} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.rowNumber}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.UID}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium bg-purple-50 text-purple-800">{getCourierName(record.personalCourierId)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.firstname} {record.lastname}</td>
+
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.city}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatCurrency(record.adjustedEarnings)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.overdueCashDebt)}</td>
@@ -510,7 +573,7 @@ const ManagerRecordsDetail = () => {
                             </tbody>
                             <tfoot className="bg-gray-50">
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-4 text-sm font-bold text-gray-900">Total ({records.length} couriers)</td>
+                                    <td colSpan={5} className="px-6 py-4 text-sm font-bold text-gray-900">Total ({records.length} couriers)</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatCurrency(records.reduce((sum, r) => isBoltRecord(r) ? sum + r.adjustedEarnings : sum, 0))}
                                     </td>
@@ -542,6 +605,12 @@ const ManagerRecordsDetail = () => {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Name</th>
+                                    <th
+                                        className="px-4 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider cursor-pointer select-none hover:bg-purple-200"
+                                        onClick={toggleOwnerSort}
+                                    >
+                                        Owner {ownerSortDirection === 'asc' ? '↑' : ownerSortDirection === 'desc' ? '↓' : '↕'}
+                                    </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Payout ID</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Task Fees</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Shift Guarantee</th>
@@ -572,6 +641,7 @@ const ManagerRecordsDetail = () => {
                                     return (
                                         <tr key={record.id} className="hover:bg-gray-50">
                                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.name}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium bg-purple-50 text-purple-800">{getCourierName(record.personalCourierId)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.payoutID}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.taskFees)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.shiftGuarantee)}</td>
@@ -596,7 +666,7 @@ const ManagerRecordsDetail = () => {
                             </tbody>
                             <tfoot className="bg-gray-50">
                                 <tr>
-                                    <td colSpan={2} className="px-4 py-4 text-sm font-bold text-gray-900">Total ({records.length} couriers)</td>
+                                    <td colSpan={3} className="px-4 py-4 text-sm font-bold text-gray-900">Total ({records.length} couriers)</td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatCurrency(records.reduce((sum, r) => isWoltRecord(r) ? sum + r.taskFees : sum, 0))}
                                     </td>
@@ -659,6 +729,12 @@ const ManagerRecordsDetail = () => {
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th
+                                        className="px-4 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider cursor-pointer select-none hover:bg-purple-200"
+                                        onClick={toggleOwnerSort}
+                                    >
+                                        Owner {ownerSortDirection === 'asc' ? '↑' : ownerSortDirection === 'desc' ? '↓' : '↕'}
+                                    </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Applications</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Active Account</th>
@@ -697,6 +773,7 @@ const ManagerRecordsDetail = () => {
                                         <tr key={record.id} className="hover:bg-gray-50">
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.city}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.name}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium bg-purple-50 text-purple-800">{getCourierName(record.personalCourierId)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.email}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
@@ -727,8 +804,7 @@ const ManagerRecordsDetail = () => {
                             </tbody>
                             <tfoot className="bg-gray-50">
                                 <tr>
-                                    <td colSpan={3} className="px-4 py-4 text-sm font-bold text-gray-900">Total ({records.length} accounts)</td>
-                                    <td className="px-4 py-4"></td>
+                                    <td colSpan={4} className="px-4 py-4 text-sm font-bold text-gray-900">Total ({records.length} accounts)</td>
                                     <td className="px-4 py-4"></td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatCurrency(records.reduce((sum, r) => isGlovoRecord(r) ? sum + r.cashBalance : sum, 0))}
@@ -868,6 +944,12 @@ const ManagerRecordsDetail = () => {
                         <li onClick={() => setActive("Wolt")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Wolt" ? "bg-blue-300" : "bg-blue-100 hover:bg-blue-300"}`}>Wolt</li>
                         <li onClick={() => setActive("Glovo")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Glovo" ? "bg-yellow-300" : "bg-yellow-100 hover:bg-yellow-300"}`}>Glovo</li>
                     </ul>
+                    <button
+                        onClick={() => setShowNegro(prev => !prev)}
+                        className={`text-xs px-4 py-2 rounded-md font-semibold transition cursor-pointer ${showNegro ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                    >
+                        Negro
+                    </button>
                     <span>Total Earnings: <strong>{formatCurrency(getTotalEarnings())}</strong></span>
                 </div>
                 <div className="flex items-center gap-2">

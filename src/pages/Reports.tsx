@@ -41,7 +41,7 @@ const Reports = () => {
         }
 
         try {
-            const response = await fetch("${BASE_API}/reports", {
+            const response = await fetch(`${BASE_API}/reports`, {
                 method: "POST",
                 headers: getAuthHeaders(),
                 body: JSON.stringify({
@@ -101,9 +101,12 @@ const Reports = () => {
         const fetchData = async () => {
             try {
                 const response = await fetch(
-                    "${BASE_API}/reports",
+                    `${BASE_API}/reports`,
                     { headers: getAuthHeaders() }
                 );
+
+
+                console.log(response);
 
                 const data = await response.json();
                 setReports(data);
