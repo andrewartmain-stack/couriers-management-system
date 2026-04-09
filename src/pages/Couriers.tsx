@@ -53,15 +53,15 @@ const Couriers = () => {
     const getTagName = (id: number) => tags.find(t => t.id === id)?.name ?? '';
 
     const uniqueNationalities = useMemo(() =>
-        Array.from(new Set(baseCouriers.map(c => c.nationality))).sort(), [baseCouriers]);
+        Array.from(new Set(baseCouriers.map(c => c.nationality).filter(Boolean))).sort(), [baseCouriers]);
 
     const filtered = useMemo(() => baseCouriers.filter(c => {
         if (search.trim()) {
             const s = search.toLowerCase();
             const match =
-                `${c.firstname} ${c.lastname}`.toLowerCase().includes(s) ||
-                c.phoneNumber.includes(search) ||
-                c.nationality.toLowerCase().includes(s) ||
+                `${c.firstname ?? ''} ${c.lastname ?? ''}`.toLowerCase().includes(s) ||
+                (c.phoneNumber ?? '').includes(search) ||
+                (c.nationality ?? '').toLowerCase().includes(s) ||
                 getCityName(c.cityId).toLowerCase().includes(s) ||
                 getManagerName(c.managerId).toLowerCase().includes(s) ||
                 c.tagIds?.some(id => getTagName(id).toLowerCase().includes(s));
