@@ -131,11 +131,11 @@ const ManagerReports = () => {
                                         <div className="font-medium text-gray-500">Bolt</div>
                                         <div className="flex justify-between">
                                             <span>Before</span>
-                                            <span>{report.boltBefore}</span>
+                                            <span>{Math.round(report.boltBefore)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span>After</span>
-                                            <span>{report.boltAfter}</span>
+                                            <span>{Math.round(report.boltAfter)}</span>
                                         </div>
                                     </div>
 
@@ -143,11 +143,11 @@ const ManagerReports = () => {
                                         <div className="font-medium text-gray-500">Wolt</div>
                                         <div className="flex justify-between">
                                             <span>Before</span>
-                                            <span>{report.woltBefore}</span>
+                                            <span>{Math.round(report.woltBefore)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span>After</span>
-                                            <span>{report.woltAfter}</span>
+                                            <span>{Math.round(report.woltAfter)}</span>
                                         </div>
                                     </div>
 
@@ -155,11 +155,11 @@ const ManagerReports = () => {
                                         <div className="font-medium text-gray-500">Glovo</div>
                                         <div className="flex justify-between">
                                             <span>Before</span>
-                                            <span>{report.glovoBefore}</span>
+                                            <span>{Math.round(report.glovoBefore)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                             <span>After</span>
-                                            <span>{report.glovoAfter}</span>
+                                            <span>{Math.round(report.glovoAfter)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -168,11 +168,11 @@ const ManagerReports = () => {
                                 <div className="mt-5 pt-4 border-t text-sm">
                                     <div className="flex justify-between font-medium">
                                         <span>Total Payout</span>
-                                        <span>{report.totalPayout}</span>
+                                        <span>{Math.round(report.totalPayout)}</span>
                                     </div>
                                     <div className="flex justify-between text-gray-600">
                                         <span>Manager Commission</span>
-                                        <span>{report.totalManagerCommission}</span>
+                                        <span>{Math.round(report.totalManagerCommission)}</span>
                                     </div>
                                 </div>
 

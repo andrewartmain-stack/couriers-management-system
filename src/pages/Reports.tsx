@@ -198,16 +198,16 @@ const Reports = () => {
 
                             {/* Income */}
                             <div className="text-sm space-y-1 text-gray-600 mb-3">
-                                <div>Bolt: {report.boltSum}</div>
-                                <div>Wolt: {report.woltSum}</div>
-                                <div>Glovo: {report.glovoSum}</div>
+                                <div>Bolt: {Math.round(report.boltSum)}</div>
+                                <div>Wolt: {Math.round(report.woltSum)}</div>
+                                <div>Glovo: {Math.round(report.glovoSum)}</div>
                             </div>
 
                             {/* Totals */}
                             <div className="text-sm space-y-1 text-gray-700 font-medium">
-                                <div>Profit: {report.profits}</div>
-                                <div>Total Income: {report.totalIncome}</div>
-                                <div>Total Outcome: {report.totalOutcome}</div>
+                                <div>Profit: {Math.round(report.profits)}</div>
+                                <div>Total Income: {Math.round(report.totalIncome)}</div>
+                                <div>Total Outcome: {Math.round(report.totalOutcome)}</div>
                             </div>
 
                             {/* Status Badge */}

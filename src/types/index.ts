@@ -4,6 +4,7 @@ export type Courier = {
   lastname: string;
   phoneNumber: string;
   nationality: string;
+  cnp: string | null;
   cityId: number;
   managerId: number;
   tagIds: number[];

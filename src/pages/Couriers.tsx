@@ -91,14 +91,19 @@ const Couriers = () => {
     const buildBody = (
         firstName: string, lastName: string, phoneNumber: string, nationality: string,
         cityId: number | undefined, managerId: number | undefined,
-        ctr: number, commission: number, tagIds: number[]
+        ctr: number, commission: number, tagIds: number[], cnp: string
     ) => {
-        if (!firstName || !lastName || !phoneNumber || !cityId || !managerId || ctr === undefined || commission === undefined) return null;
-        return { firstname: firstName, lastname: lastName, phoneNumber, nationality, cityId, managerId, ctr, commission, tagIds };
+        if (!firstName || !lastName || !cityId || !managerId || ctr === undefined || commission === undefined) return null;
+        return { firstname: firstName, lastname: lastName, phoneNumber: phoneNumber || null, nationality, cityId, managerId, ctr, commission, tagIds, cnp: cnp || null };
     };
 
-    const addCourier = async (...args: Parameters<typeof buildBody>) => {
-        const body = buildBody(...args);
+    const addCourier = async (
+        firstName: string, lastName: string, phoneNumber: string, nationality: string,
+        cityId: number | undefined, managerId: number | undefined,
+        ctr: number, commission: number, tagIds: number[], cnp: string, trcFile: File | null
+    ) => {
+        if (!phoneNumber) return showAlert('error', 'Please complete all the fields');
+        const body = buildBody(firstName, lastName, phoneNumber, nationality, cityId, managerId, ctr, commission, tagIds, cnp);
         if (!body) return showAlert('error', 'Please complete all the fields');
         try {
             const res = await fetch(`${BASE_API}/couriers`, {
@@ -107,6 +112,18 @@ const Couriers = () => {
                 body: JSON.stringify(body),
             });
             if (res.ok) {
+                const created = await res.json();
+                if (trcFile && created?.id) {
+                    const formData = new FormData();
+                    formData.append('file', trcFile);
+                    const headers = getAuthHeaders();
+                    delete (headers as any)['Content-Type'];
+                    await fetch(`${BASE_API}/files/upload-trc/courier/${created.id}`, {
+                        method: 'POST',
+                        headers,
+                        body: formData,
+                    });
+                }
                 refresh();
                 showAlert('success', 'Courier was added successfully');
                 setIsAddOpen(false);
@@ -319,7 +336,7 @@ const Couriers = () => {
                                     if (p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1))
                                         return (
                                             <button key={p} onClick={() => setPage(p)}
-                                                className={`px-3 py-1 rounded-lg text-sm ${page === p ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>
+                                                className={`px-3 py-1 rounded-lg text-sm ${page === p ? 'bg-gray-700 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>
                                                 {p}
                                             </button>
                                         );

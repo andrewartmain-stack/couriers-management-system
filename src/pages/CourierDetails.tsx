@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom"
 import { useState, useEffect } from "react"
-import { MdPhone, MdLocationCity, MdPerson, MdBusinessCenter, MdAttachMoney, MdDescription, MdPublic, MdEmail, MdUpload, MdDelete, MdDownload, MdError } from "react-icons/md"
+import { MdPhone, MdLocationCity, MdPerson, MdBusinessCenter, MdAttachMoney, MdDescription, MdPublic, MdEmail, MdUpload, MdDelete, MdDownload, MdError, MdDocumentScanner } from "react-icons/md"
 import { FaFileContract, FaIdCard, FaFileAlt } from "react-icons/fa"
 import type { Courier, Tag, City, Manager, Account } from "../types"
 import Spinner from "../components/Spinner"
@@ -268,6 +268,8 @@ const CourierDetails = () => {
         );
     }
 
+    console.log(courier);
+
     return (
         <div className="w-full space-y-6">
             {/* Alert */}
@@ -304,7 +306,7 @@ const CourierDetails = () => {
             </div>
 
             {/* Main Info Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card type="light" className="!min-h-fit !p-4">
                     <div className="flex items-center gap-3">
                         <MdPhone size={18} />
@@ -341,6 +343,16 @@ const CourierDetails = () => {
                         <div>
                             <p className="text-xs opacity-60">Manager</p>
                             <p className="font-medium">{getManagerFullName(courier.managerId)}</p>
+                        </div>
+                    </div>
+                </Card>
+
+                <Card type="light" className="!min-h-fit !p-4">
+                    <div className="flex items-center gap-3">
+                        <MdDocumentScanner size={18} />
+                        <div>
+                            <p className="text-xs opacity-60">CNP</p>
+                            <p className="font-medium">{courier.cnp}</p>
                         </div>
                     </div>
                 </Card>

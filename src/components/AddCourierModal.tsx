@@ -8,7 +8,7 @@ import type { City, Manager, Tag } from '../types/index'
 
 interface AddCourierModalPropsInterface {
     onClose: () => void;
-    addCourier: (firstName: string, lastName: string, phoneNumber: string, nationality: string, cityId: number | undefined, managerId: number | undefined, ctr: number, commission: number, tagsId: number[]) => void;
+    addCourier: (firstName: string, lastName: string, phoneNumber: string, nationality: string, cityId: number | undefined, managerId: number | undefined, ctr: number, commission: number, tagsId: number[], cnp: string, trcFile: File | null) => void;
     managersData: Manager[];
     citiesData: City[];
     tagsData: Tag[];
@@ -27,6 +27,8 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
     const [lastNameInput, setLastNameInput] = useState<string>('');
     const [nationalityInput, setNationalityInput] = useState<string>('');
     const [phoneNumberInput, setPhoneNumberInput] = useState<string>('');
+    const [cnpInput, setCnpInput] = useState<string>('');
+    const [trcFile, setTrcFile] = useState<File | null>(null);
     const [ctrInput, setCtrInput] = useState<string>('');
     const [commissionInput, setCommissionInput] = useState<string>('');
 
@@ -78,6 +80,19 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
                     <label htmlFor="nationality" className="text-sm -mb-1.25">Nationality</label>
                     <Input nameValue="nationality" placeholderValue="Romanian" inputValue={nationalityInput} onChangeAction={(e: any) => setNationalityInput(e.target.value)} required />
                     {validationErrors?.nationality && <p className="text-red-400 text-sm">{validationErrors.nationality}</p>}
+
+                    <label htmlFor="cnp" className="text-sm -mb-1.25">CNP <span className="text-gray-400">(Optional)</span></label>
+                    <Input nameValue="cnp" placeholderValue="1234567890123" inputValue={cnpInput} onChangeAction={(e: any) => setCnpInput(e.target.value)} />
+                    {validationErrors?.cnp && <p className="text-red-400 text-sm">{validationErrors.cnp}</p>}
+
+                    <label htmlFor="trc" className="text-sm -mb-1.25">TRC Document <span className="text-gray-400">(Optional)</span></label>
+                    <input
+                        id="trc"
+                        name="trc"
+                        type="file"
+                        onChange={(e) => setTrcFile(e.target.files?.[0] ?? null)}
+                        className="bg-gray-100 border border-transparent rounded-full py-2.5 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none file:mr-3 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:bg-gray-200 file:text-gray-700 hover:file:bg-gray-300"
+                    />
 
                     <label htmlFor="ctr" className="text-sm -mb-1.25">CTR</label>
                     <Input nameValue="ctr" placeholderValue="90" inputValue={ctrInput} onChangeAction={(e: any) => setCtrInput(e.target.value)} type="number" required />
@@ -187,7 +202,9 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
                             selectedManager?.id,
                             Number(ctrInput),
                             Number(commissionInput),
-                            selectedTags
+                            selectedTags,
+                            cnpInput.trim(),
+                            trcFile
                         )}
                     >
                         Save

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from "../utils/index";
+import { useAppData } from "../context/AppContext";
 import Button from "../components/Button";
-import { MdError, MdEdit, MdCheck, MdClose, MdNavigateBefore, MdNavigateNext, MdCheckCircle, MdPersonAdd } from "react-icons/md";
+import { MdError, MdEdit, MdCheck, MdClose, MdCheckCircle, MdPersonAdd, MdNavigateBefore } from "react-icons/md";
 import { AddCourierModal } from "../components/AddCourierModal";
 
 import Spinner from "../components/Spinner";
@@ -79,15 +80,13 @@ interface ModifiedFields {
     };
 }
 
-const ITEMS_PER_PAGE = 20;
-
 const UnassignedRecordsDetail = () => {
+    const { refresh } = useAppData();
     const [active, setActive] = useState<string>("Bolt");
     const [records, setRecords] = useState<CourierRecord[]>([]);
     const [clickedRecordAssignId, setClickedRecordAssignId] = useState<number | null>(null);
     const [clickedRecordAssignUUID, setClickedRecordAssignUUID] = useState<string | null>(null);
     const [modifiedFields, setModifiedFields] = useState<ModifiedFields>({});
-    const [currentPage, setCurrentPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
     const [alert, setAlert] = useState<{
@@ -110,10 +109,6 @@ const UnassignedRecordsDetail = () => {
 
     const { reportId } = useParams();
     const navigate = useNavigate();
-    const totalPages = Math.ceil(records.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    const currentRecords = records.slice(startIndex, endIndex);
 
     const isBoltRecord = (record: CourierRecord): record is BoltRecord => {
         return 'UID' in record;
@@ -142,9 +137,11 @@ const UnassignedRecordsDetail = () => {
 
                 const platform = active.toLowerCase();
                 const response = await fetch(
-                    `${BASE_API}/records/${platform}/report/${reportId}/new-accounts`,
+                    `${BASE_API}/records/${platform}/report/${reportId}/unassigned`,
                     { headers: getAuthHeaders() }
                 );
+
+                console.log(response);
 
                 if (!response.ok) {
                     throw new Error("Failed to fetch records");
@@ -153,7 +150,6 @@ const UnassignedRecordsDetail = () => {
                 const data = await response.json();
                 setRecords(data);
                 setModifiedFields({});
-                setCurrentPage(1);
             } catch (error) {
                 if (error instanceof Error) {
                     console.error(error.message);
@@ -282,11 +278,23 @@ const UnassignedRecordsDetail = () => {
         }
     };
 
+    const formatInt = (value: number | null) => {
+        if (value === null) return '-';
+        return Math.round(value).toString();
+    };
+
     const formatCurrency = (value: number | null) => {
         if (value === null) return '-';
         return new Intl.NumberFormat("ro-RO", {
             style: "currency",
             currency: "RON",
+            minimumFractionDigits: 2,
+        }).format(value);
+    };
+
+    const formatNumber = (value: number | null) => {
+        if (value === null) return '-';
+        return new Intl.NumberFormat("ro-RO", {
             minimumFractionDigits: 2,
         }).format(value);
     };
@@ -330,7 +338,7 @@ const UnassignedRecordsDetail = () => {
         return (
             <div className="flex items-center justify-end gap-2 group">
                 <span className={isModified ? "text-blue-600 font-semibold" : ""}>
-                    {value === null ? '-' : field === 'commission' ? `${value}%` : formatCurrency(value)}
+                    {value === null ? '-' : field === 'commission' ? `${Math.round(value)}%` : Math.round(value).toString()}
                 </span>
                 <button
                     onClick={() => handleEditClick(record.id, field, value)}
@@ -340,11 +348,6 @@ const UnassignedRecordsDetail = () => {
                 </button>
             </div>
         );
-    };
-
-    const handlePageChange = (page: number) => {
-        setCurrentPage(page);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const getTotalEarnings = () => {
@@ -411,6 +414,7 @@ const UnassignedRecordsDetail = () => {
             if (!response.ok) throw new Error('Failed to assign record');
             setRecords(prev => prev.filter(r => r.id !== assignModalRecord.id));
             setAssignModalRecord(null);
+            refresh();
             showAlert('success', 'Record assigned successfully');
         } catch (e) {
             showAlert('error', (e as Error).message || 'Failed to assign record');
@@ -443,6 +447,7 @@ const UnassignedRecordsDetail = () => {
 
             setRecords(prev => prev.filter(r => r.id !== assignModalRecord.id));
             setAssignModalRecord(null);
+            refresh();
             showAlert('success', 'Courier created and record assigned successfully');
         } catch (e) {
             showAlert('error', (e as Error).message || 'Failed to create and assign');
@@ -596,7 +601,7 @@ const UnassignedRecordsDetail = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {currentRecords.map((record) => {
+                                {records.map((record) => {
                                     if (!isBoltRecord(record)) return null;
                                     return (
                                         <tr key={record.id} className="hover:bg-gray-50">
@@ -604,12 +609,12 @@ const UnassignedRecordsDetail = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.UID}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.firstname} {record.lastname}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.city}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatCurrency(record.adjustedEarnings)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.overdueCashDebt)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.tips)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(record.adjustedEarnings)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.overdueCashDebt)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.courierTotal)}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <button
                                                     onClick={() => {
@@ -651,7 +656,6 @@ const UnassignedRecordsDetail = () => {
                             </tfoot>
                         </table>
                     </div>
-                    {renderPagination()}
                 </>
             );
         } else if (isWoltRecord(firstRecord)) {
@@ -688,29 +692,29 @@ const UnassignedRecordsDetail = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {currentRecords.map((record) => {
+                                {records.map((record) => {
                                     if (!isWoltRecord(record)) return null;
                                     return (
                                         <tr key={record.id} className="hover:bg-gray-50">
                                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.name}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.payoutID}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.taskFees)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.shiftGuarantee)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.manualTransactions)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.bonus)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.payoutCorrection)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.otherCost)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.tips)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.additionalCompensation)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.compensationDeductions)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.operationalFeeDeduction)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.activationFeeDeduction)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.manualGD)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.manualGDReturn)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.cashOffset)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.taskFees)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.shiftGuarantee)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualTransactions)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.bonus)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.payoutCorrection)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.otherCost)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.additionalCompensation)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.compensationDeductions)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.operationalFeeDeduction)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.activationFeeDeduction)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualGD)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualGDReturn)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.cashOffset)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatCurrency(record.courierTotal)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-center">
                                                 <button
                                                     onClick={() => handleAssignClick(record)}
@@ -746,7 +750,7 @@ const UnassignedRecordsDetail = () => {
                                         {formatCurrency(records.reduce((sum, r) => isWoltRecord(r) ? sum + r.otherCost : sum, 0))}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                        {formatCurrency(records.reduce((sum, r) => isWoltRecord(r) ? sum + r.tips : sum, 0))}
+                                        {formatInt(records.reduce((sum, r) => isWoltRecord(r) ? sum + r.tips : sum, 0))}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatCurrency(records.reduce((sum, r) => isWoltRecord(r) ? sum + r.additionalCompensation : sum, 0))}
@@ -771,14 +775,13 @@ const UnassignedRecordsDetail = () => {
                                     </td>
                                     <td colSpan={2} className="px-4 py-4"></td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                        {formatCurrency(records.reduce((sum, r) => isWoltRecord(r) ? sum + r.courierTotal : sum, 0))}
+                                        {formatInt(records.reduce((sum, r) => isWoltRecord(r) ? sum + r.courierTotal : sum, 0))}
                                     </td>
                                     <td className="px-4 py-4"></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
-                    {renderPagination()}
                 </>
             );
         } else if (isGlovoRecord(firstRecord)) {
@@ -822,7 +825,7 @@ const UnassignedRecordsDetail = () => {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {currentRecords.map((record) => {
+                                {records.map((record) => {
                                     if (!isGlovoRecord(record)) return null;
                                     const total = record.total ?? calculateGlovoTotal(record.courierTotal, record.tips, record.ctr, record.commission);
                                     return (
@@ -832,27 +835,27 @@ const UnassignedRecordsDetail = () => {
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.email}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.cashBalance)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.cashBalance)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.orders)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.orders)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.bonus)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.income)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.bonus)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.tips)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.accountActivationFee)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.appCommission)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatCurrency(total)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.income)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.accountActivationFee)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.appCommission)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(total)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatCurrency(record.courierTotal)}</td>
+                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
                                             <td className="px-4 py-4 whitespace-nowrap text-center">
                                                 <button
                                                     onClick={() => handleAssignClick(record)}
@@ -888,7 +891,7 @@ const UnassignedRecordsDetail = () => {
                                     </td>
                                     <td colSpan={3} className="px-4 py-4"></td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                        {formatCurrency(records.reduce((sum, r) => isGlovoRecord(r) ? sum + r.tips : sum, 0))}
+                                        {formatInt(records.reduce((sum, r) => isGlovoRecord(r) ? sum + r.tips : sum, 0))}
                                     </td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatCurrency(records.reduce((sum, r) => isGlovoRecord(r) ? sum + r.accountActivationFee : sum, 0))}
@@ -898,75 +901,22 @@ const UnassignedRecordsDetail = () => {
                                     </td>
                                     <td className="px-4 py-4"></td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                        {formatCurrency(getTotalEarnings())}
+                                        {formatInt(getTotalEarnings())}
                                     </td>
                                     <td colSpan={2} className="px-4 py-4"></td>
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
-                                        {formatCurrency(records.reduce((sum, r) => isGlovoRecord(r) ? sum + r.courierTotal : sum, 0))}
+                                        {formatInt(records.reduce((sum, r) => isGlovoRecord(r) ? sum + r.courierTotal : sum, 0))}
                                     </td>
                                     <td className="px-4 py-4"></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
-                    {renderPagination()}
                 </>
             );
         }
 
         return null;
-    };
-
-    const renderPagination = () => {
-        if (totalPages <= 1) return null;
-
-        return (
-            <div className="flex items-center justify-between px-4 py-3 bg-white border-t border-gray-200 sm:px-6 rounded-lg shadow">
-                <div className="flex items-center justify-between w-full">
-                    <div className="text-sm text-gray-700">
-                        Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
-                        <span className="font-medium">{Math.min(endIndex, records.length)}</span> of{' '}
-                        <span className="font-medium">{records.length}</span> results
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                            className={`p-2 rounded-lg ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-                        >
-                            <MdNavigateBefore size={24} />
-                        </button>
-
-                        <div className="flex gap-1">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                                if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
-                                    return (
-                                        <button
-                                            key={page}
-                                            onClick={() => handlePageChange(page)}
-                                            className={`px-3 py-1 rounded-lg text-sm ${currentPage === page ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
-                                        >
-                                            {page}
-                                        </button>
-                                    );
-                                } else if (page === currentPage - 2 || page === currentPage + 2) {
-                                    return <span key={page} className="px-2">...</span>;
-                                }
-                                return null;
-                            })}
-                        </div>
-
-                        <button
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                            className={`p-2 rounded-lg ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-100'}`}
-                        >
-                            <MdNavigateNext size={24} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
     };
 
     return (

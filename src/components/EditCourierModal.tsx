@@ -17,7 +17,8 @@ interface EditCourierModalPropsInterface {
         managerId: number | undefined,
         ctr: number,
         commission: number,
-        tagsId: number[]
+        tagsId: number[],
+        cnp: string
     ) => void;
     courier: Courier;
     managersData: Manager[];
@@ -43,6 +44,7 @@ export const EditCourierModal: FC<EditCourierModalPropsInterface> = ({
     const [lastNameInput, setLastNameInput] = useState<string>('');
     const [nationalityInput, setNationalityInput] = useState<string>('');
     const [phoneNumberInput, setPhoneNumberInput] = useState<string>('');
+    const [cnpInput, setCnpInput] = useState<string>('');
     const [ctrInput, setCtrInput] = useState<string>('');
     const [commissionInput, setCommissionInput] = useState<string>('');
 
@@ -50,8 +52,9 @@ export const EditCourierModal: FC<EditCourierModalPropsInterface> = ({
         // Pre-fill form with courier data
         setFirstNameInput(courier.firstname);
         setLastNameInput(courier.lastname);
-        setPhoneNumberInput(courier.phoneNumber);
+        setPhoneNumberInput(courier.phoneNumber ?? '');
         setNationalityInput(courier.nationality);
+        setCnpInput(courier.cnp ?? '');
         setCtrInput(courier.ctr.toString());
         setCommissionInput(courier.commission.toString());
         setSelectedTags(courier.tagIds || []);
@@ -103,6 +106,10 @@ export const EditCourierModal: FC<EditCourierModalPropsInterface> = ({
                     <label htmlFor="nationality" className="text-sm -mb-1.25">Nationality</label>
                     <Input nameValue="nationality" placeholderValue="Romanian" inputValue={nationalityInput} onChangeAction={(e: any) => setNationalityInput(e.target.value)} required />
                     {validationErrors?.nationality && <p className="text-red-400 text-sm">{validationErrors.nationality}</p>}
+
+                    <label htmlFor="cnp" className="text-sm -mb-1.25">CNP <span className="text-gray-400">(Optional)</span></label>
+                    <Input nameValue="cnp" placeholderValue="1234567890123" inputValue={cnpInput} onChangeAction={(e: any) => setCnpInput(e.target.value)} />
+                    {validationErrors?.cnp && <p className="text-red-400 text-sm">{validationErrors.cnp}</p>}
 
                     <label htmlFor="ctr" className="text-sm -mb-1.25">CTR</label>
                     <Input nameValue="ctr" placeholderValue="90" inputValue={ctrInput} onChangeAction={(e: any) => setCtrInput(e.target.value)} type="number" required />
@@ -203,7 +210,8 @@ export const EditCourierModal: FC<EditCourierModalPropsInterface> = ({
                             selectedManager?.id,
                             Number(ctrInput),
                             Number(commissionInput),
-                            selectedTags
+                            selectedTags,
+                            cnpInput.trim()
                         )}
                     >
                         Update

@@ -262,7 +262,7 @@ const Accounts = () => {
                                     if (p === 1 || p === totalPages || (p >= page - 1 && p <= page + 1))
                                         return (
                                             <button key={p} onClick={() => setPage(p)}
-                                                className={`px-3 py-1 rounded-lg text-sm ${page === p ? 'bg-blue-500 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>
+                                                className={`px-3 py-1 rounded-lg text-sm ${page === p ? 'bg-gray-700 text-white' : 'text-gray-700 hover:bg-gray-100'}`}>
                                                 {p}
                                             </button>
                                         );
