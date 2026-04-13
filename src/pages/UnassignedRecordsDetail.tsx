@@ -411,6 +411,9 @@ const UnassignedRecordsDetail = () => {
                 `${BASE_API}/records/${clickedRecordAssignId}/account/${clickedRecordAssignUUID}/managerReport/${managerReportId}/courier/${selectedCourier.id}`,
                 { method: 'PATCH', headers: getAuthHeaders() }
             );
+
+            console.log(`${BASE_API}/records/${clickedRecordAssignId}/account/${clickedRecordAssignUUID}/managerReport/${managerReportId}/courier/${selectedCourier.id}`);
+
             if (!response.ok) throw new Error('Failed to assign record');
             setRecords(prev => prev.filter(r => r.id !== assignModalRecord.id));
             setAssignModalRecord(null);

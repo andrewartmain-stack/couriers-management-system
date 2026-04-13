@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { MdDelete, MdEdit, MdError, MdNavigateBefore, MdNavigateNext, MdSearch } from "react-icons/md";
+import { MdDelete, MdEdit, MdError, MdNavigateBefore, MdNavigateNext, MdSearch, MdFilterList, MdClear } from "react-icons/md";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
 import Input from "../components/Input";
@@ -37,6 +37,9 @@ const Accounts = () => {
     const [toEdit, setToEdit] = useState<Account | null>(null);
     const [deleteId, setDeleteId] = useState<number | null>(null);
     const [search, setSearch] = useState('');
+    const [platformFilter, setPlatformFilter] = useState('');
+    const [statusFilter, setStatusFilter] = useState('');
+    const [courierFilter, setCourierFilter] = useState('');
     const [page, setPage] = useState(1);
     const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
     const [alert, setAlert] = useState<{ on: boolean; type: 'error' | 'success'; msg: string }>({
@@ -49,6 +52,16 @@ const Accounts = () => {
     };
 
     const filtered = useMemo(() => baseAccounts.filter(a => {
+        // Platform filter
+        if (platformFilter && a.platform.toLowerCase() !== platformFilter.toLowerCase()) return false;
+
+        // Status filter
+        if (statusFilter && a.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
+
+        // Courier filter
+        if (courierFilter && a.courierId !== Number(courierFilter)) return false;
+
+        // Search filter
         if (!search.trim()) return true;
 
         const searchLower = search.toLowerCase();
@@ -60,7 +73,7 @@ const Accounts = () => {
             (a.email?.toLowerCase() || '').includes(searchLower) ||
             (a.platform?.toLowerCase() || '').includes(searchLower)
         );
-    }), [baseAccounts, search]);
+    }), [baseAccounts, search, platformFilter, statusFilter, courierFilter]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const visible = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -70,6 +83,10 @@ const Accounts = () => {
         const c = couriers.find(c => c.id === id);
         return c ? `${c.firstname} ${c.lastname}` : 'Unknown';
     };
+
+    const selectCls = "px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors";
+
+    const hasActiveFilters = platformFilter || statusFilter || courierFilter || search !== '';
 
     // --- handlers ---
     const addAccount = async (...args: Parameters<typeof buildAccountBody>) => {
@@ -197,13 +214,72 @@ const Accounts = () => {
 
             <h2 className="text-3xl font-semibold tracking-tight">Accounts</h2>
 
-            <div className="flex flex-wrap justify-between items-center">
-                <div className="relative max-w-sm">
-                    <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <Input nameValue="search" placeholderValue="search by name, UID, email..."
-                        inputValue={search} hasIcon onChangeAction={(e: any) => { setSearch(e.target.value); setPage(1); }} />
+            <div className="space-y-4">
+                <div className="flex flex-wrap justify-between items-center gap-4">
+                    <div className="relative max-w-sm flex-1">
+                        <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <Input nameValue="search" placeholderValue="Search by name, UID, email..."
+                            inputValue={search} hasIcon onChangeAction={(e: any) => { setSearch(e.target.value); setPage(1); }} />
+                    </div>
+                    <Button onClickAction={() => setIsAddOpen(true)}>Add Account</Button>
                 </div>
-                <Button onClickAction={() => setIsAddOpen(true)}>Add Account</Button>
+
+                <div className="flex flex-wrap gap-3 items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-2">
+                        <MdFilterList className="text-gray-500" size={20} />
+                        <span className="text-sm font-medium text-gray-700">Filters:</span>
+                    </div>
+
+                    <select
+                        value={platformFilter}
+                        onChange={(e) => { setPlatformFilter(e.target.value); setPage(1); }}
+                        className={selectCls}
+                    >
+                        <option value="">All Platforms</option>
+                        <option value="bolt">Bolt</option>
+                        <option value="wolt">Wolt</option>
+                        <option value="glovo">Glovo</option>
+                    </select>
+
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                        className={selectCls}
+                    >
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="blocked">Blocked</option>
+                        <option value="deleted">Deleted</option>
+                        <option value="unknown">Unknown</option>
+                    </select>
+
+                    <select
+                        value={courierFilter}
+                        onChange={(e) => { setCourierFilter(e.target.value); setPage(1); }}
+                        className={selectCls}
+                    >
+                        <option value="">All Couriers</option>
+                        {visibleCouriers.map(c => (
+                            <option key={c.id} value={c.id}>
+                                {c.firstname} {c.lastname}
+                            </option>
+                        ))}
+                    </select>
+
+                    {hasActiveFilters && (
+                        <button
+                            onClick={() => { setPlatformFilter(''); setStatusFilter(''); setCourierFilter(''); setSearch(''); setPage(1); }}
+                            className="ml-auto px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                            <MdClear size={16} />
+                            Clear Filters
+                        </button>
+                    )}
+
+                    <span className="text-sm text-gray-500">
+                        {filtered.length} {filtered.length === 1 ? 'account' : 'accounts'}
+                    </span>
+                </div>
             </div>
 
             <div className="relative flex flex-col space-y-4">

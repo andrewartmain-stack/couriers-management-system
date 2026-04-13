@@ -31,3 +31,36 @@ export const getAuthHeadersNoContentType = (): Record<string, string> => {
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
+
+export const getToken = (): string | null => localStorage.getItem('jwt_token');
+
+export const clearAuthData = () => {
+  localStorage.removeItem('jwt_token');
+  localStorage.removeItem('user_role');
+  localStorage.removeItem('manager_id');
+};
+
+const decodeJwtPayload = (token: string): Record<string, any> | null => {
+  const parts = token.split('.');
+  if (parts.length !== 3) return null;
+
+  try {
+    const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = atob(payload);
+    return JSON.parse(decoded);
+  } catch {
+    return null;
+  }
+};
+
+export const isTokenValid = (): boolean => {
+  const token = getToken();
+  if (!token) return false;
+
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload !== 'object') return false;
+
+  if (typeof payload.exp !== 'number') return true;
+
+  return payload.exp * 1000 > Date.now();
+};

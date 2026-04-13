@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
 import { NavLink } from "react-router-dom"
 import { FaEye } from "react-icons/fa";
-import { MdDelete, MdEdit, MdError, MdNavigateBefore, MdNavigateNext, MdSearch, MdFilterList } from "react-icons/md";
+import { MdDelete, MdEdit, MdError, MdNavigateBefore, MdNavigateNext, MdSearch, MdFilterList, MdClear } from "react-icons/md";
 import { AddCourierModal } from "../components/AddCourierModal";
 import { EditCourierModal } from "../components/EditCourierModal";
 import Button from "../components/Button";
@@ -170,7 +170,7 @@ const Couriers = () => {
         } catch (e: any) { showAlert('error', e.message); }
     };
 
-    const selectCls = "px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500";
+    const selectCls = "px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors";
 
     return (
         <div className="w-full space-y-6">
@@ -216,7 +216,7 @@ const Couriers = () => {
             {/* Filters */}
             <div className="space-y-4">
                 <div className="flex flex-wrap justify-between items-center gap-4">
-                    <div className="relative max-w-sm">
+                    <div className="relative max-w-sm flex-1">
                         <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                         <Input nameValue="search" placeholderValue="Search" inputValue={search} hasIcon
                             onChangeAction={(e: any) => { setSearch(e.target.value); setPage(1); }} />
@@ -224,7 +224,7 @@ const Couriers = () => {
                     <Button onClickAction={() => setIsAddOpen(true)}>Add Courier</Button>
                 </div>
 
-                <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex flex-wrap gap-3 items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-2">
                         <MdFilterList className="text-gray-500" size={20} />
                         <span className="text-sm font-medium text-gray-700">Filters:</span>
@@ -253,12 +253,13 @@ const Couriers = () => {
                     )}
 
                     {hasActiveFilters && (
-                        <button onClick={clearFilters} className="px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors">
+                        <button onClick={clearFilters} className="ml-auto px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1">
+                            <MdClear size={16} />
                             Clear Filters
                         </button>
                     )}
 
-                    <span className="text-sm text-gray-500 ml-auto">
+                    <span className="text-sm text-gray-500">
                         {filtered.length} {filtered.length === 1 ? 'courier' : 'couriers'}
                     </span>
                 </div>

@@ -1,4 +1,5 @@
-import { useEffect, useState, type FC } from "react";
+import { useEffect, useMemo, useState, type FC } from "react";
+import { MdCheck } from "react-icons/md";
 
 import Button from "./Button";
 import Input from "./Input";
@@ -30,12 +31,24 @@ export const EditAccountModal: FC<EditAccountModalPropsInterface> = ({
     validationErrors
 }) => {
     const [selectedCourier, setSelectedCourier] = useState<Courier | null>(null);
+    const [courierSearch, setCourierSearch] = useState<string>('');
     const [selectedPlatform, setSelectedPlatform] = useState<"BOLT" | "WOLT" | "GLOVO">("BOLT");
     const [selectedStatus, setSelectedStatus] = useState<"BLOCKED" | "ACTIVE" | "DELETED" | "UNKNOWN">("ACTIVE");
     const [accountUIDInput, setAccountUIDInput] = useState<string>('');
     const [accountNameInput, setAccountNameInput] = useState<string>('');
     const [phoneNumberInput, setPhoneNumberInput] = useState<string>('');
     const [emailInput, setEmailInput] = useState<string>('');
+
+    const filteredCouriers = useMemo(() => {
+        const term = courierSearch.trim().toLowerCase();
+        if (!term) return couriersData;
+
+        return couriersData.filter((courier) =>
+            `${courier.firstname} ${courier.lastname}`.toLowerCase().includes(term) ||
+            courier.phoneNumber?.toLowerCase().includes(term) ||
+            courier.nationality?.toLowerCase().includes(term)
+        );
+    }, [couriersData, courierSearch]);
 
     useEffect(() => {
         // Pre-fill form with account data
@@ -66,26 +79,32 @@ export const EditAccountModal: FC<EditAccountModalPropsInterface> = ({
                 </h2>
 
                 <div className="flex flex-col gap-3">
-                    <label htmlFor="courier" className="text-sm -mb-1.25">Assign to Courier</label>
-                    <select
-                        name="courier"
-                        value={selectedCourier ? `${selectedCourier.firstname} ${selectedCourier.lastname}` : ''}
-                        onChange={(e) => {
-                            const courier = couriersData.find(c => `${c.firstname} ${c.lastname}` === e.target.value);
-                            if (courier) setSelectedCourier(courier);
-                        }}
-                        required
-                        className="bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none"
-                    >
-                        <option value="" disabled>
-                            Select Courier
-                        </option>
-                        {couriersData.map((courier) => (
-                            <option key={courier.id} value={`${courier.firstname} ${courier.lastname}`}>
-                                {courier.firstname} {courier.lastname}
-                            </option>
-                        ))}
-                    </select>
+                    <label htmlFor="courierSearch" className="text-sm -mb-1.25">Assign to Courier</label>
+                    <input
+                        id="courierSearch"
+                        type="text"
+                        placeholder="Search couriers..."
+                        value={courierSearch}
+                        onChange={(e) => setCourierSearch(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                        {filteredCouriers.length === 0 ? (
+                            <p className="text-sm text-gray-500 p-4 text-center">No couriers found</p>
+                        ) : (
+                            filteredCouriers.map(courier => (
+                                <button
+                                    key={courier.id}
+                                    type="button"
+                                    onClick={() => setSelectedCourier(courier)}
+                                    className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors ${selectedCourier === courier ? 'bg-blue-50' : ''}`}
+                                >
+                                    <span className="text-sm font-medium text-gray-900">{courier.firstname} {courier.lastname}</span>
+                                    {selectedCourier === courier && <MdCheck size={18} className="text-blue-600" />}
+                                </button>
+                            ))
+                        )}
+                    </div>
                     {validationErrors?.courierId && <p className="text-red-400 text-sm">{validationErrors.courierId}</p>}
 
                     <label htmlFor="platform" className="text-sm -mb-1.25">Platform</label>

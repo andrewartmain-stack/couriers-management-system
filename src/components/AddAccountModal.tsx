@@ -1,4 +1,5 @@
-import { useState, type FC } from "react";
+import { useMemo, useState, type FC } from "react";
+import { MdCheck } from "react-icons/md";
 
 import Button from "./Button";
 import Input from "./Input";
@@ -27,12 +28,24 @@ export const AddAccountModal: FC<AddAccountModalPropsInterface> = ({
     validationErrors,
 }) => {
     const [courierId, setCourierId] = useState<number | undefined>(undefined);
+    const [courierSearch, setCourierSearch] = useState<string>('');
     const [platform, setPlatform] = useState<"BOLT" | "WOLT" | "GLOVO">("BOLT");
     const [status, setStatus] = useState<"BLOCKED" | "ACTIVE" | "DELETED" | "UNKNOWN">("ACTIVE");
     const [accountUID, setAccountUID] = useState<string>("");
     const [accountName, setAccountName] = useState<string>("");
     const [phoneNumber, setPhoneNumber] = useState<string>("");
     const [email, setEmail] = useState<string>("");
+
+    const filteredCouriers = useMemo(() => {
+        const term = courierSearch.trim().toLowerCase();
+        if (!term) return couriersData;
+
+        return couriersData.filter((courier) =>
+            `${courier.firstname} ${courier.lastname}`.toLowerCase().includes(term) ||
+            courier.phoneNumber?.toLowerCase().includes(term) ||
+            courier.nationality?.toLowerCase().includes(term)
+        );
+    }, [couriersData, courierSearch]);
 
     const handleSubmit = () => {
         if (!courierId) return;
@@ -59,22 +72,34 @@ export const AddAccountModal: FC<AddAccountModalPropsInterface> = ({
                 <div className="flex flex-col gap-4">
                     {/* Courier Select */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor="courier" className="text-sm font-medium">
+                        <label htmlFor="courierSearch" className="text-sm font-medium">
                             Courier <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            id="courier"
-                            value={courierId || ""}
-                            onChange={(e) => setCourierId(Number(e.target.value))}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                        >
-                            <option value="">Select a courier</option>
-                            {couriersData.map((courier) => (
-                                <option key={courier.id} value={courier.id}>
-                                    {courier.firstname} {courier.lastname}
-                                </option>
-                            ))}
-                        </select>
+                        <input
+                            id="courierSearch"
+                            type="text"
+                            placeholder="Search couriers..."
+                            value={courierSearch}
+                            onChange={(e) => setCourierSearch(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <div className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-100">
+                            {filteredCouriers.length === 0 ? (
+                                <p className="text-sm text-gray-500 p-4 text-center">No couriers found</p>
+                            ) : (
+                                filteredCouriers.map((courier) => (
+                                    <button
+                                        key={courier.id}
+                                        type="button"
+                                        onClick={() => setCourierId(courier.id)}
+                                        className={`w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors ${courierId === courier.id ? 'bg-blue-50' : ''}`}
+                                    >
+                                        <span className="text-sm font-medium text-gray-900">{courier.firstname} {courier.lastname}</span>
+                                        {courierId === courier.id && <MdCheck size={18} className="text-blue-600" />}
+                                    </button>
+                                ))
+                            )}
+                        </div>
                         {validationErrors?.courierId && (
                             <p className="text-red-400 text-sm">{validationErrors.courierId}</p>
                         )}
