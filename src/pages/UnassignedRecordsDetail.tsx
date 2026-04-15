@@ -46,6 +46,7 @@ interface WoltRecord {
     id: number;
     name: string;
     payoutID: string;
+    courierId: string;
     taskFees: number;
     shiftGuarantee: number;
     manualTransactions: number;
@@ -84,8 +85,6 @@ const UnassignedRecordsDetail = () => {
     const { refresh } = useAppData();
     const [active, setActive] = useState<string>("Bolt");
     const [records, setRecords] = useState<CourierRecord[]>([]);
-    const [clickedRecordAssignId, setClickedRecordAssignId] = useState<number | null>(null);
-    const [clickedRecordAssignUUID, setClickedRecordAssignUUID] = useState<string | null>(null);
     const [modifiedFields, setModifiedFields] = useState<ModifiedFields>({});
     const [loading, setLoading] = useState(true);
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
@@ -148,6 +147,7 @@ const UnassignedRecordsDetail = () => {
                 }
 
                 const data = await response.json();
+                console.log('Fetched records for platform:', platform, data);
                 setRecords(data);
                 setModifiedFields({});
             } catch (error) {
@@ -407,12 +407,28 @@ const UnassignedRecordsDetail = () => {
         try {
             const managerReport = managerReports.find(mr => mr.managerId === selectedCourier.managerId);
             const managerReportId = managerReport?.id;
+
+            // Determine the account identifier based on platform
+            let accountIdentifier: string;
+            if (isBoltRecord(assignModalRecord)) {
+                accountIdentifier = assignModalRecord.UID;
+            } else if (isGlovoRecord(assignModalRecord)) {
+                accountIdentifier = assignModalRecord.email;
+            } else if (isWoltRecord(assignModalRecord)) {
+                accountIdentifier = assignModalRecord.courierId;
+                if (!accountIdentifier) {
+                    throw new Error('No valid identifier found for Wolt record (courierId and payoutID are both missing)');
+                }
+            } else {
+                throw new Error('Unknown record type');
+            }
+
             const response = await fetch(
-                `${BASE_API}/records/${clickedRecordAssignId}/account/${clickedRecordAssignUUID}/managerReport/${managerReportId}/courier/${selectedCourier.id}`,
+                `${BASE_API}/records/${assignModalRecord.id}/account/${accountIdentifier}/managerReport/${managerReportId}/courier/${selectedCourier.id}`,
                 { method: 'PATCH', headers: getAuthHeaders() }
             );
 
-            console.log(`${BASE_API}/records/${clickedRecordAssignId}/account/${clickedRecordAssignUUID}/managerReport/${managerReportId}/courier/${selectedCourier.id}`);
+            console.log(`${BASE_API}/records/${assignModalRecord.id}/account/${accountIdentifier}/managerReport/${managerReportId}/courier/${selectedCourier.id}`);
 
             if (!response.ok) throw new Error('Failed to assign record');
             setRecords(prev => prev.filter(r => r.id !== assignModalRecord.id));
@@ -437,7 +453,23 @@ const UnassignedRecordsDetail = () => {
         try {
             const managerReport = managerReports.find(mr => mr.managerId === managerId);
             const managerReportId = managerReport?.id;
-            const createResponse = await fetch(`${BASE_API}/records/${clickedRecordAssignId}/account/${clickedRecordAssignUUID}/managerReport/${managerReportId}`, {
+
+            // Determine the account identifier based on platform
+            let accountIdentifier: string;
+            if (isBoltRecord(assignModalRecord)) {
+                accountIdentifier = assignModalRecord.UID;
+            } else if (isGlovoRecord(assignModalRecord)) {
+                accountIdentifier = assignModalRecord.email;
+            } else if (isWoltRecord(assignModalRecord)) {
+                accountIdentifier = assignModalRecord.courierId || assignModalRecord.payoutID;
+                if (!accountIdentifier) {
+                    throw new Error('No valid identifier found for Wolt record (courierId and payoutID are both missing)');
+                }
+            } else {
+                throw new Error('Unknown record type');
+            }
+
+            const createResponse = await fetch(`${BASE_API}/records/${assignModalRecord.id}/account/${accountIdentifier}/managerReport/${managerReportId}`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
                 body: JSON.stringify({ firstname, lastname, phoneNumber, nationality, cityId, managerId, ctr, commission, tagIds }),
@@ -620,11 +652,7 @@ const UnassignedRecordsDetail = () => {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <button
-                                                    onClick={() => {
-                                                        setClickedRecordAssignId(record.id);
-                                                        setClickedRecordAssignUUID(record.UID);
-                                                        handleAssignClick(record)
-                                                    }}
+                                                    onClick={() => handleAssignClick(record)}
                                                     className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
                                                 >
                                                     <MdPersonAdd size={16} />
@@ -721,7 +749,11 @@ const UnassignedRecordsDetail = () => {
                                             <td className="px-4 py-4 whitespace-nowrap text-center">
                                                 <button
                                                     onClick={() => handleAssignClick(record)}
-                                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                                    disabled={!record.courierId && !record.payoutID}
+                                                    className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-lg transition-colors ${!record.courierId && !record.payoutID
+                                                        ? 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                                                        : 'text-blue-600 bg-blue-50 hover:bg-blue-100 cursor-pointer'
+                                                        }`}
                                                 >
                                                     <MdPersonAdd size={16} />
                                                     Assign
