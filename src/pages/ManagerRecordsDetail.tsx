@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import Button from "../components/Button";
 import { MdError, MdEdit, MdCheck, MdClose, MdCheckCircle } from "react-icons/md";
-
+import Input from "../components/Input";
 import Spinner from "../components/Spinner";
 import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from '../utils/index';
 import type { Courier, Tag } from '../types';
@@ -93,12 +93,13 @@ const ManagerRecordsDetail = () => {
     const [records, setRecords] = useState<CourierRecord[]>([]);
     const [couriers, setCouriers] = useState<Courier[]>([]);
     const [tags, setTags] = useState<Tag[]>([]);
-    const [showNegro, setShowNegro] = useState(false);
     const [_originalRecords, setOriginalRecords] = useState<CourierRecord[]>([]);
     const [modifiedFields, setModifiedFields] = useState<ModifiedFields>({});
     const [ownerSortDirection, setOwnerSortDirection] = useState<'asc' | 'desc' | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [searchTerm, setSearchTerm] = useState<string>("");
+    const [showCard, setShowCard] = useState(false);
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
     const [alert, setAlert] = useState<{
         isActive: boolean;
@@ -115,7 +116,7 @@ const ManagerRecordsDetail = () => {
         return total + (fields.ctr ? 1 : 0) + (fields.commission ? 1 : 0);
     }, 0);
 
-    const negroTagId = tags.find(t => t.name.toLowerCase() === 'negro')?.id ?? null;
+    const cardTagId = tags.find(t => t.name.toLowerCase() === 'card')?.id ?? null;
 
     const getCourierName = (id: number) => {
         const courier = couriers.find(c => c.id === id);
@@ -124,8 +125,23 @@ const ManagerRecordsDetail = () => {
 
     const filteredRecords = records.filter(record => {
         const courier = couriers.find(c => c.id === record.personalCourierId);
-        const isNegro = courier && negroTagId !== null && courier.tagIds.includes(negroTagId);
-        return showNegro ? isNegro : !isNegro;
+        const hasCard = courier && cardTagId !== null && courier.tagIds.includes(cardTagId);
+        const cardFilter = showCard ? hasCard : !hasCard;
+
+        // Search filter - match against courier name or other name fields
+        const searchLower = searchTerm.toLowerCase();
+        const courierName = getCourierName(record.personalCourierId).toLowerCase();
+        const firstName = 'firstname' in record ? record.firstname?.toLowerCase() : '';
+        const lastName = 'lastname' in record ? record.lastname?.toLowerCase() : '';
+        const name = 'name' in record ? record.name?.toLowerCase() : '';
+
+        const matchesSearch = !searchTerm ||
+            courierName.includes(searchLower) ||
+            firstName.includes(searchLower) ||
+            lastName.includes(searchLower) ||
+            name.includes(searchLower);
+
+        return cardFilter && matchesSearch;
     });
 
     const sortedRecords = ownerSortDirection
@@ -883,10 +899,10 @@ const ManagerRecordsDetail = () => {
                         <li onClick={() => setActive("Glovo")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Glovo" ? "bg-yellow-300" : "bg-yellow-100 hover:bg-yellow-300"}`}>Glovo</li>
                     </ul>
                     <button
-                        onClick={() => setShowNegro(prev => !prev)}
-                        className={`text-xs px-4 py-2 rounded-md font-semibold transition cursor-pointer ${showNegro ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                        onClick={() => setShowCard(prev => !prev)}
+                        className={`text-xs px-4 py-2 rounded-md font-semibold transition cursor-pointer ${showCard ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                     >
-                        Negro
+                        Card
                     </button>
                     <span>Total Earnings: <strong>{formatCurrency(getTotalEarnings())}</strong></span>
                 </div>
@@ -901,6 +917,16 @@ const ManagerRecordsDetail = () => {
                     <Button onClickAction={() => navigate(`/reports/${reportId}/reports-by-managers/${managerId}/transactions${managerName ? `?managerName=${managerName}` : ''}`)}>Transactions</Button>
                     <Button onClickAction={() => navigate(-1)}>Back</Button>
                 </div>
+
+            </div>
+            <div className="flex items-center gap-4">
+                <Input
+                    inputValue={searchTerm}
+                    nameValue="search"
+                    type="text"
+                    placeholderValue="Search by courier name..."
+                    onChangeAction={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
 
             {renderTable()}
