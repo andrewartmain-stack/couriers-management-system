@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import Button from "../components/Button";
-import { MdError, MdEdit, MdCheck, MdClose, MdCheckCircle } from "react-icons/md";
+import { MdError, MdEdit, MdCheck, MdClose, MdCheckCircle, MdFiberManualRecord } from "react-icons/md";
 import Input from "../components/Input";
 import Spinner from "../components/Spinner";
 import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from '../utils/index';
@@ -882,7 +882,7 @@ const ManagerRecordsDetail = () => {
                 </div>
             )}
 
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-15">
                 <div>
                     <h2 className="text-2xl font-medium">Manager Records</h2>
                     {managerName && <p className="text-sm text-gray-500 mt-1">Manager: {managerName}</p>}
@@ -892,27 +892,60 @@ const ManagerRecordsDetail = () => {
                         </p>
                     )}
                 </div>
-                <div className="flex items-center gap-10">
-                    <ul className="flex gap-4 text-xs">
-                        <li onClick={() => setActive("Bolt")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Bolt" ? "bg-green-300" : "bg-green-100 hover:bg-green-300"}`}>Bolt</li>
-                        <li onClick={() => setActive("Wolt")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Wolt" ? "bg-blue-300" : "bg-blue-100 hover:bg-blue-300"}`}>Wolt</li>
-                        <li onClick={() => setActive("Glovo")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Glovo" ? "bg-yellow-300" : "bg-yellow-100 hover:bg-yellow-300"}`}>Glovo</li>
-                    </ul>
+
+                <div className="flex-1 flex items-center gap-4">
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => setActive("Bolt")}
+                            className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Bolt" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
+                            title="Bolt Platform"
+                        >
+                            <img src="/bolt-1.svg" alt="Bolt" className="h-10 w-10 object-contain rounded-lg" />
+                            {active === "Bolt" && (
+                                <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-green-500 bg-white rounded-full text-lg shadow-md" />
+                            )}
+                        </button>
+
+                        <button
+                            onClick={() => setActive("Wolt")}
+                            className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Wolt" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
+                            title="Wolt Platform"
+                        >
+                            <img src="/idcxOwdB80_1769177945180.jpeg" alt="Wolt" className="h-10 w-10 object-contain rounded-lg" />
+                            {active === "Wolt" && (
+                                <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-blue-500 bg-white rounded-full text-lg shadow-md" />
+                            )}
+                        </button>
+
+                        <button
+                            onClick={() => setActive("Glovo")}
+                            className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Glovo" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
+                            title="Glovo Platform"
+                        >
+                            <img src="/idgSGGe-zp_1769177931923.jpeg" alt="Glovo" className="h-10 w-10 object-contain rounded-lg" />
+                            {active === "Glovo" && (
+                                <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-yellow-500 bg-white rounded-full text-lg shadow-md" />
+                            )}
+                        </button>
+                    </div>
+
                     <button
                         onClick={() => setShowCard(prev => !prev)}
-                        className={`text-xs px-4 py-2 rounded-md font-semibold transition cursor-pointer ${showCard ? "bg-gray-800 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${showCard ? "bg-gray-500 text-white shadow-md" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                     >
-                        Card
+                        Filter by Card tag
                     </button>
-                    <span>Total Earnings: <strong>{formatCurrency(getTotalEarnings())}</strong></span>
+
+                    <span className="text-sm">Total Earnings: <strong className="text-lg">{formatCurrency(getTotalEarnings())}</strong></span>
                 </div>
+
                 <div className="flex items-center gap-2">
                     <Button
                         variant="success"
                         disabled={modifiedFieldsCount === 0 || saving}
                         onClickAction={handleSaveChanges}
                     >
-                        {saving ? "Saving..." : `Save Changes${modifiedFieldsCount > 0 ? ` (${modifiedFieldsCount})` : ''}`}
+                        {saving ? "Saving..." : `Save${modifiedFieldsCount > 0 ? ` (${modifiedFieldsCount})` : ''}`}
                     </Button>
                     <Button onClickAction={() => navigate(`/reports/${reportId}/reports-by-managers/${managerId}/transactions${managerName ? `?managerName=${managerName}` : ''}`)}>Transactions</Button>
                     <Button onClickAction={() => navigate(-1)}>Back</Button>

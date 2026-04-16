@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { MdError, MdCheckCircle, MdDelete, MdEdit, MdCheck, MdClose, MdUpload, MdDownload } from "react-icons/md";
 import Button from "../components/Button";
+import Select from "../components/Select";
 import Spinner from "../components/Spinner";
 import { getAuthHeaders, getAuthHeadersNoContentType, BASE_URL } from "../utils/index";
 
@@ -320,14 +321,14 @@ const Transactions = () => {
                                     {editingId === t.id ? (
                                         <>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <select
+                                                <Select
                                                     value={editType}
-                                                    onChange={e => setEditType(e.target.value as "INCOME" | "EXPENSE")}
-                                                    className="border rounded px-2 py-1 text-sm"
-                                                >
-                                                    <option value="INCOME">INCOME</option>
-                                                    <option value="EXPENSE">EXPENSE</option>
-                                                </select>
+                                                    onChange={(value) => setEditType(value as "INCOME" | "EXPENSE")}
+                                                    options={[
+                                                        { value: 'INCOME', label: 'INCOME' },
+                                                        { value: 'EXPENSE', label: 'EXPENSE' }
+                                                    ]}
+                                                />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <input

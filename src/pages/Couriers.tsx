@@ -6,6 +6,7 @@ import { AddCourierModal } from "../components/AddCourierModal";
 import { EditCourierModal } from "../components/EditCourierModal";
 import Button from "../components/Button";
 import Input from "../components/Input";
+import Select from "../components/Select";
 import Spinner from "../components/Spinner";
 import { DeletionModal } from "../components/DeletionModal";
 import { useAppData } from '../context/AppContext';
@@ -230,27 +231,45 @@ const Couriers = () => {
                         <span className="text-sm font-medium text-gray-700">Filters:</span>
                     </div>
 
-                    <select value={selectedCity} onChange={e => { setSelectedCity(e.target.value === 'all' ? 'all' : Number(e.target.value)); setPage(1); }} className={selectCls}>
-                        <option value="all">All Cities</option>
-                        {cities.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <div className="flex gap-3 flex-wrap flex-1">
+                        <div className="w-48">
+                            <Select
+                                value={selectedCity}
+                                onChange={(value) => { setSelectedCity(value === 'all' ? 'all' : Number(value)); setPage(1); }}
+                                placeholder="All Cities"
+                                options={[...cities.map(c => ({ value: c.id, label: c.name }))]}
+                            />
+                        </div>
 
-                    <select value={selectedNationality} onChange={e => { setSelectedNationality(e.target.value); setPage(1); }} className={selectCls}>
-                        <option value="all">All Nationalities</option>
-                        {uniqueNationalities.map(n => <option key={n} value={n}>{n}</option>)}
-                    </select>
+                        <div className="w-48">
+                            <Select
+                                value={selectedNationality}
+                                onChange={(value) => { setSelectedNationality(String(value)); setPage(1); }}
+                                placeholder="All Nationalities"
+                                options={uniqueNationalities.map(n => ({ value: n, label: n }))}
+                            />
+                        </div>
 
-                    <select value={selectedTag} onChange={e => { setSelectedTag(e.target.value === 'all' ? 'all' : Number(e.target.value)); setPage(1); }} className={selectCls}>
-                        <option value="all">All Tags</option>
-                        {tags.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                    </select>
+                        <div className="w-48">
+                            <Select
+                                value={selectedTag}
+                                onChange={(value) => { setSelectedTag(value === 'all' ? 'all' : Number(value)); setPage(1); }}
+                                placeholder="All Tags"
+                                options={tags.map(t => ({ value: t.id, label: t.name }))}
+                            />
+                        </div>
 
-                    {isAdmin && (
-                        <select value={selectedManager} onChange={e => { setSelectedManager(e.target.value === 'all' ? 'all' : Number(e.target.value)); setPage(1); }} className={selectCls}>
-                            <option value="all">All Managers</option>
-                            {managers.map(m => <option key={m.id} value={m.id}>{m.firstname} {m.lastname}</option>)}
-                        </select>
-                    )}
+                        {isAdmin && (
+                            <div className="w-48">
+                                <Select
+                                    value={selectedManager}
+                                    onChange={(value) => { setSelectedManager(value === 'all' ? 'all' : Number(value)); setPage(1); }}
+                                    placeholder="All Managers"
+                                    options={managers.map(m => ({ value: m.id, label: `${m.firstname} ${m.lastname}` }))}
+                                />
+                            </div>
+                        )}
+                    </div>
 
                     {hasActiveFilters && (
                         <button onClick={clearFilters} className="ml-auto px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1">

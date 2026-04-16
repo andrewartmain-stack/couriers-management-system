@@ -58,7 +58,7 @@ const Sidebar = () => {
                             <span className="text-sm font-semibold truncate leading-tight">{username}</span>
                             {role && (
                                 <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-[var(--accent-dark)] text-white shrink-0">
-                                    {role}
+                                    {role.replace('ROLE_', '')}
                                 </span>
                             )}
                         </div>

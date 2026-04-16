@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getAuthHeaders, getAuthHeadersNoContentType, BASE_API } from "../utils/index";
 import { useAppData } from "../context/AppContext";
 import Button from "../components/Button";
-import { MdError, MdEdit, MdCheck, MdClose, MdCheckCircle, MdPersonAdd, MdNavigateBefore } from "react-icons/md";
+import { MdError, MdEdit, MdCheck, MdClose, MdCheckCircle, MdPersonAdd, MdNavigateBefore, MdFiberManualRecord } from "react-icons/md";
 import { AddCourierModal } from "../components/AddCourierModal";
 
 import Spinner from "../components/Spinner";
@@ -979,16 +979,45 @@ const UnassignedRecordsDetail = () => {
                 </div>
             )}
 
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-medium">Unassigned Records</h2>
                 </div>
-                <div className="flex items-center gap-10">
-                    <ul className="flex gap-4 text-xs">
-                        <li onClick={() => setActive("Bolt")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Bolt" ? "bg-green-300" : "bg-green-100 hover:bg-green-300"}`}>Bolt</li>
-                        <li onClick={() => setActive("Wolt")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Wolt" ? "bg-blue-300" : "bg-blue-100 hover:bg-blue-300"}`}>Wolt</li>
-                        <li onClick={() => setActive("Glovo")} className={`p-2 px-4 rounded-full cursor-pointer transition ${active === "Glovo" ? "bg-yellow-300" : "bg-yellow-100 hover:bg-yellow-300"}`}>Glovo</li>
-                    </ul>
+                <div className="flex-1 flex items-center gap-10">
+                    <div className="flex gap-4">
+                        <button
+                            onClick={() => setActive("Bolt")}
+                            className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Bolt" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
+                            title="Bolt Platform"
+                        >
+                            <img src="/bolt-1.svg" alt="Bolt" className="h-12 w-12 object-contain" />
+                            {active === "Bolt" && (
+                                <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-green-500 bg-white rounded-full text-lg shadow-md" />
+                            )}
+                        </button>
+
+                        <button
+                            onClick={() => setActive("Wolt")}
+                            className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Wolt" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
+                            title="Wolt Platform"
+                        >
+                            <img src="/idcxOwdB80_1769177945180.jpeg" alt="Wolt" className="h-12 w-12 object-contain rounded-lg" />
+                            {active === "Wolt" && (
+                                <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-blue-500 bg-white rounded-full text-lg shadow-md" />
+                            )}
+                        </button>
+
+                        <button
+                            onClick={() => setActive("Glovo")}
+                            className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Glovo" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
+                            title="Glovo Platform"
+                        >
+                            <img src="/idgSGGe-zp_1769177931923.jpeg" alt="Glovo" className="h-12 w-12 object-contain rounded-lg" />
+                            {active === "Glovo" && (
+                                <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-yellow-500 bg-white rounded-full text-lg shadow-md" />
+                            )}
+                        </button>
+                    </div>
                     <span>Total Earnings: <strong>{formatCurrency(getTotalEarnings())}</strong></span>
                 </div>
                 <div className="flex items-center gap-2">

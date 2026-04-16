@@ -3,6 +3,7 @@ import { MdDelete, MdEdit, MdError, MdNavigateBefore, MdNavigateNext, MdSearch, 
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
 import Input from "../components/Input";
+import Select from "../components/Select";
 import { AddAccountModal } from "../components/AddAccountModal";
 import { EditAccountModal } from "../components/EditAccountModal";
 import { DeletionModal } from '../components/DeletionModal'
@@ -39,7 +40,6 @@ const Accounts = () => {
     const [search, setSearch] = useState('');
     const [platformFilter, setPlatformFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
-    const [courierFilter, setCourierFilter] = useState('');
     const [page, setPage] = useState(1);
     const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
     const [alert, setAlert] = useState<{ on: boolean; type: 'error' | 'success'; msg: string }>({
@@ -58,9 +58,6 @@ const Accounts = () => {
         // Status filter
         if (statusFilter && a.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
 
-        // Courier filter
-        if (courierFilter && a.courierId !== Number(courierFilter)) return false;
-
         // Search filter
         if (!search.trim()) return true;
 
@@ -73,7 +70,7 @@ const Accounts = () => {
             (a.email?.toLowerCase() || '').includes(searchLower) ||
             (a.platform?.toLowerCase() || '').includes(searchLower)
         );
-    }), [baseAccounts, search, platformFilter, statusFilter, courierFilter]);
+    }), [baseAccounts, search, platformFilter, statusFilter]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const visible = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
@@ -86,7 +83,7 @@ const Accounts = () => {
 
     const selectCls = "px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors";
 
-    const hasActiveFilters = platformFilter || statusFilter || courierFilter || search !== '';
+    const hasActiveFilters = platformFilter || statusFilter || search !== '';
 
     // --- handlers ---
     const addAccount = async (...args: Parameters<typeof buildAccountBody>) => {
@@ -230,45 +227,38 @@ const Accounts = () => {
                         <span className="text-sm font-medium text-gray-700">Filters:</span>
                     </div>
 
-                    <select
-                        value={platformFilter}
-                        onChange={(e) => { setPlatformFilter(e.target.value); setPage(1); }}
-                        className={selectCls}
-                    >
-                        <option value="">All Platforms</option>
-                        <option value="bolt">Bolt</option>
-                        <option value="wolt">Wolt</option>
-                        <option value="glovo">Glovo</option>
-                    </select>
+                    <div className="flex gap-3 flex-wrap flex-1">
+                        <div className="w-48">
+                            <Select
+                                value={platformFilter}
+                                onChange={(value) => { setPlatformFilter(String(value)); setPage(1); }}
+                                placeholder="All Platforms"
+                                options={[
+                                    { value: 'bolt', label: 'Bolt' },
+                                    { value: 'wolt', label: 'Wolt' },
+                                    { value: 'glovo', label: 'Glovo' }
+                                ]}
+                            />
+                        </div>
 
-                    <select
-                        value={statusFilter}
-                        onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                        className={selectCls}
-                    >
-                        <option value="">All Statuses</option>
-                        <option value="active">Active</option>
-                        <option value="blocked">Blocked</option>
-                        <option value="deleted">Deleted</option>
-                        <option value="unknown">Unknown</option>
-                    </select>
-
-                    <select
-                        value={courierFilter}
-                        onChange={(e) => { setCourierFilter(e.target.value); setPage(1); }}
-                        className={selectCls}
-                    >
-                        <option value="">All Couriers</option>
-                        {visibleCouriers.map(c => (
-                            <option key={c.id} value={c.id}>
-                                {c.firstname} {c.lastname}
-                            </option>
-                        ))}
-                    </select>
+                        <div className="w-48">
+                            <Select
+                                value={statusFilter}
+                                onChange={(value) => { setStatusFilter(String(value)); setPage(1); }}
+                                placeholder="All Statuses"
+                                options={[
+                                    { value: 'active', label: 'Active' },
+                                    { value: 'blocked', label: 'Blocked' },
+                                    { value: 'deleted', label: 'Deleted' },
+                                    { value: 'unknown', label: 'Unknown' }
+                                ]}
+                            />
+                        </div>
+                    </div>
 
                     {hasActiveFilters && (
                         <button
-                            onClick={() => { setPlatformFilter(''); setStatusFilter(''); setCourierFilter(''); setSearch(''); setPage(1); }}
+                            onClick={() => { setPlatformFilter(''); setStatusFilter(''); setSearch(''); setPage(1); }}
                             className="ml-auto px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
                         >
                             <MdClear size={16} />
