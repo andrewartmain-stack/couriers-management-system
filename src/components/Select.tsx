@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { type FC } from 'react'
 import { MdArrowDropDown } from 'react-icons/md'
 
 interface SelectOption {
@@ -16,7 +16,6 @@ interface SelectProps {
 }
 
 const Select: FC<SelectProps> = ({ value, onChange, options, label, placeholder, className = '' }) => {
-    const selectedLabel = options.find(opt => opt.value === value)?.label || placeholder || 'Select...'
 
     return (
         <div className={`relative inline-block w-full ${className}`}>

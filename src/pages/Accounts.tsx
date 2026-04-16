@@ -81,8 +81,6 @@ const Accounts = () => {
         return c ? `${c.firstname} ${c.lastname}` : 'Unknown';
     };
 
-    const selectCls = "px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors";
-
     const hasActiveFilters = platformFilter || statusFilter || search !== '';
 
     // --- handlers ---
@@ -201,7 +199,7 @@ const Accounts = () => {
 
             {alert.on && (
                 <div className={`fixed top-5 right-5 z-100 max-w-sm w-full shadow-xl rounded-2xl p-4 animate-toast
-                    ${alert.type === 'error' ? 'bg-[var(--error-bg)] text-[var(--error-text)]' : 'bg-green-100 text-green-700'}`}>
+                    ${alert.type === 'error' ? 'bg-(--error-bg) text-(--error-text)' : 'bg-green-100 text-green-700'}`}>
                     <div className="flex items-start gap-3">
                         <MdError className={`mt-0.5 text-lg ${alert.type === 'error' ? 'text-red-500' : 'text-green-500'}`} />
                         <p className="text-sm font-semibold">{alert.msg}</p>

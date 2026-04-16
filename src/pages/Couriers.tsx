@@ -171,13 +171,11 @@ const Couriers = () => {
         } catch (e: any) { showAlert('error', e.message); }
     };
 
-    const selectCls = "px-3 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors";
-
     return (
         <div className="w-full space-y-6">
             {alert.on && (
                 <div className={`fixed top-5 right-5 z-100 max-w-sm w-full shadow-xl rounded-2xl p-4 animate-toast
-                    ${alert.type === 'error' ? 'bg-[var(--error-bg)] text-[var(--error-text)]' : 'bg-green-100 text-green-700'}`}>
+                    ${alert.type === 'error' ? 'bg-(--error-bg) text-(--error-text)' : 'bg-green-100 text-green-700'}`}>
                     <div className="flex items-start gap-3">
                         <MdError className={`mt-0.5 text-lg ${alert.type === 'error' ? 'text-red-500' : 'text-green-500'}`} />
                         <p className="text-sm font-semibold">{alert.msg}</p>
@@ -313,7 +311,7 @@ const Couriers = () => {
                                 <td className="px-4 py-3">{c.nationality}</td>
                                 <td className="px-4 py-3">{getCityName(c.cityId)}</td>
                                 <td className="px-4 py-3">
-                                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                    <div className="flex flex-wrap gap-1 max-w-50">
                                         {c.tagIds?.length
                                             ? c.tagIds.map(id => (
                                                 <span key={id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
