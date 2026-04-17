@@ -51,7 +51,7 @@ const Sidebar = () => {
                 {/* Brand */}
                 <div className="px-1 pt-1 flex items-center justify-start gap-2">
                     <img src={logoIcon} alt="logo" className='w-10' />
-                    <span className="font-bold text-xl tracking-tight">titanic</span>
+                    <span className="font-bold text-xl tracking-tight">titanic<span className="text-blue-600">.</span></span>
                 </div>
 
                 {/* User card */}

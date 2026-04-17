@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MdError, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { BASE_URL } from "../utils/index";
+import logoIcon from "/logo-icon.png";
+import deliveryImage from "../../public/bolt_food.courier.webp";
 
 interface LoginResponse {
     token: string;
@@ -103,7 +105,7 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="min-h-screen flex bg-white">
             {alert.isActive && (
                 <div
                     className={`fixed top-6 right-6 z-50 w-full max-w-sm rounded-xl p-4 shadow-2xl ${alert.type === "error"
@@ -118,17 +120,41 @@ const Login = () => {
                 </div>
             )}
 
-            <div className="w-full max-w-md px-4">
-                <div className="bg-white rounded-2xl shadow-xl p-8">
-                    <div className="text-center mb-8">
-                        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                            Welcome Back
+            {/* Left Side - Image */}
+            <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-50 to-blue-100 items-center justify-center">
+                <img
+                    src={deliveryImage}
+                    alt="Delivery Service"
+                    className="w-full h-full object-cover"
+                />
+            </div>
+
+            {/* Right Side - Login Form */}
+            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-8">
+                <div className="w-full max-w-md">
+                    {/* Logo and Branding */}
+                    <div className="flex items-center justify-center mb-8">
+                        <img
+                            src={logoIcon}
+                            alt="Logo"
+                            className="w-12 h-12 object-contain"
+                        />
+                        <h1 className="text-2xl font-bold text-gray-900 ml-3">
+                            titanic<span className="text-blue-600">.</span>
                         </h1>
-                        <p className="text-gray-500 text-sm">
-                            Sign in to your account to continue
+                    </div>
+
+                    {/* Welcome Section */}
+                    <div className="text-center mb-8">
+                        <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                            Welcome Back
+                        </h2>
+                        <p className="text-gray-600 text-sm">
+                            Sign in to your account to continue managing your deliveries
                         </p>
                     </div>
 
+                    {/* Login Form */}
                     <form onSubmit={handleLogin} className="space-y-5">
                         <div>
                             <label
@@ -144,7 +170,7 @@ const Login = () => {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 placeholder="Enter your username"
-                                className="w-full bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-gray-500 focus:outline-none"
+                                className="w-full bg-gray-50 border border-gray-300 rounded-lg py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                                 required
                             />
                             {validationErrors?.username && (
@@ -169,7 +195,7 @@ const Login = () => {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
-                                    className="w-full bg-gray-100 border border-transparent rounded-full py-3 px-4 pr-12 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-gray-500 focus:outline-none"
+                                    className="w-full bg-gray-50 border border-gray-300 rounded-lg py-3 px-4 pr-12 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                                     required
                                 />
                                 <button
@@ -194,7 +220,7 @@ const Login = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full bg-gray-900 text-white py-3 px-4 rounded-full font-medium text-sm hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="w-full bg-gray-600 text-white py-3 px-4 rounded-lg font-medium text-sm hover:bg-gray-700 transition-all duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
                         >
                             {loading ? (
                                 <div className="flex items-center justify-center gap-2">
@@ -206,24 +232,6 @@ const Login = () => {
                             )}
                         </button>
                     </form>
-
-                    <div className="mt-6 text-center">
-                        <p className="text-sm text-gray-600">
-                            Don't have an account?{" "}
-                            <button
-                                type="button"
-                                className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                            >
-                                Contact your administrator
-                            </button>
-                        </p>
-                    </div>
-                </div>
-
-                <div className="mt-6 text-center">
-                    <p className="text-xs text-gray-500">
-                        Fleet Management System v1.0
-                    </p>
                 </div>
             </div>
         </div>
