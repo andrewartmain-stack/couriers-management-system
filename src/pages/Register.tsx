@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdError, MdVisibility, MdVisibilityOff, MdArrowBack } from "react-icons/md";
+import { MdError, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useAppData } from '../context/AppContext';
 import { BASE_URL } from "../utils/index";
 
@@ -139,16 +139,8 @@ const Register = () => {
                 </div>
             )}
 
-            <div className="w-full max-w-md px-4">
-                <div className="bg-white rounded-2xl shadow-xl p-8">
-                    {/* Back Button */}
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 mb-6 transition-colors"
-                    >
-                        <MdArrowBack size={18} />
-                        Back
-                    </button>
+            <div className="w-full px-4">
+                <div className="bg-white rounded-2xl p-8">
 
                     {/* Header */}
                     <div className="text-center mb-8">

@@ -990,7 +990,7 @@ const UnassignedRecordsDetail = () => {
                             className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Bolt" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
                             title="Bolt Platform"
                         >
-                            <img src="/bolt-1.svg" alt="Bolt" className="h-12 w-12 object-contain" />
+                            <img src="/bolt-1.svg" alt="Bolt" className="h-10 w-10 object-contain rounded-lg" />
                             {active === "Bolt" && (
                                 <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-green-500 bg-white rounded-full text-lg shadow-md" />
                             )}
@@ -1001,7 +1001,7 @@ const UnassignedRecordsDetail = () => {
                             className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Wolt" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
                             title="Wolt Platform"
                         >
-                            <img src="/idcxOwdB80_1769177945180.jpeg" alt="Wolt" className="h-12 w-12 object-contain rounded-lg" />
+                            <img src="/idcxOwdB80_1769177945180.jpeg" alt="Wolt" className="h-10 w-10 object-contain rounded-lg" />
                             {active === "Wolt" && (
                                 <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-blue-500 bg-white rounded-full text-lg shadow-md" />
                             )}
@@ -1012,7 +1012,7 @@ const UnassignedRecordsDetail = () => {
                             className={`relative inline-flex items-center justify-center transition-all duration-200 ${active === "Glovo" ? "scale-110" : "scale-100 opacity-60 hover:opacity-100"}`}
                             title="Glovo Platform"
                         >
-                            <img src="/idgSGGe-zp_1769177931923.jpeg" alt="Glovo" className="h-12 w-12 object-contain rounded-lg" />
+                            <img src="/idgSGGe-zp_1769177931923.jpeg" alt="Glovo" className="h-10 w-10 object-contain rounded-lg" />
                             {active === "Glovo" && (
                                 <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-yellow-500 bg-white rounded-full text-lg shadow-md" />
                             )}

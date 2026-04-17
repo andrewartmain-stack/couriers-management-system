@@ -6,12 +6,12 @@ import { AddCourierModal } from "../components/AddCourierModal";
 import { EditCourierModal } from "../components/EditCourierModal";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import Select from "../components/Select";
 import Spinner from "../components/Spinner";
 import { DeletionModal } from "../components/DeletionModal";
 import { useAppData } from '../context/AppContext';
 import type { Courier } from '../types/index'
 import { getAuthHeaders, BASE_API } from '../utils/index';
+import { useEffect, useRef } from "react";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -32,8 +32,16 @@ const Couriers = () => {
     const [page, setPage] = useState(1);
     const [selectedCity, setSelectedCity] = useState<number | 'all'>('all');
     const [selectedNationality, setSelectedNationality] = useState<string | 'all'>('all');
-    const [selectedTag, setSelectedTag] = useState<number | 'all'>('all');
+    const [selectedTags, setSelectedTags] = useState<number[]>([]);
     const [selectedManager, setSelectedManager] = useState<number | 'all'>('all');
+    const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+    const [nationalityDropdownOpen, setNationalityDropdownOpen] = useState(false);
+    const [tagsDropdownOpen, setTagsDropdownOpen] = useState(false);
+    const [managerDropdownOpen, setManagerDropdownOpen] = useState(false);
+    const cityDropdownRef = useRef<HTMLDivElement>(null);
+    const nationalityDropdownRef = useRef<HTMLDivElement>(null);
+    const tagsDropdownRef = useRef<HTMLDivElement>(null);
+    const managerDropdownRef = useRef<HTMLDivElement>(null);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
     const [toEdit, setToEdit] = useState<Courier | null>(null);
@@ -47,6 +55,25 @@ const Couriers = () => {
         setAlert({ on: true, type, msg });
         setTimeout(() => setAlert(a => ({ ...a, on: false })), 3000);
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target as Node)) {
+                setCityDropdownOpen(false);
+            }
+            if (nationalityDropdownRef.current && !nationalityDropdownRef.current.contains(event.target as Node)) {
+                setNationalityDropdownOpen(false);
+            }
+            if (tagsDropdownRef.current && !tagsDropdownRef.current.contains(event.target as Node)) {
+                setTagsDropdownOpen(false);
+            }
+            if (managerDropdownRef.current && !managerDropdownRef.current.contains(event.target as Node)) {
+                setManagerDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // --- lookups ---
     const getCityName = (id: number) => cities.find(c => c.id === id)?.name ?? '';
@@ -70,21 +97,21 @@ const Couriers = () => {
         }
         if (selectedCity !== 'all' && c.cityId !== selectedCity) return false;
         if (selectedNationality !== 'all' && c.nationality !== selectedNationality) return false;
-        if (selectedTag !== 'all' && !c.tagIds?.includes(selectedTag)) return false;
+        if (selectedTags.length > 0 && !c.tagIds?.some(id => selectedTags.includes(id))) return false;
         if (isAdmin && selectedManager !== 'all' && c.managerId !== selectedManager) return false;
         return true;
-    }), [baseCouriers, search, selectedCity, selectedNationality, selectedTag, selectedManager, isAdmin]);
+    }), [baseCouriers, search, selectedCity, selectedNationality, selectedTags, selectedManager, isAdmin]);
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const startIndex = (page - 1) * ITEMS_PER_PAGE;
     const visible = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
     const hasActiveFilters = selectedCity !== 'all' || selectedNationality !== 'all' ||
-        selectedTag !== 'all' || selectedManager !== 'all' || search !== '';
+        selectedTags.length > 0 || selectedManager !== 'all' || search !== '';
 
     const clearFilters = () => {
         setSelectedCity('all'); setSelectedNationality('all');
-        setSelectedTag('all'); setSelectedManager('all'); setSearch('');
+        setSelectedTags([]); setSelectedManager('all'); setSearch('');
     };
 
 
@@ -230,43 +257,151 @@ const Couriers = () => {
                     </div>
 
                     <div className="flex gap-3 flex-wrap flex-1">
-                        <div className="w-48">
-                            <Select
-                                value={selectedCity}
-                                onChange={(value) => { setSelectedCity(value === 'all' ? 'all' : Number(value)); setPage(1); }}
-                                placeholder="All Cities"
-                                options={[...cities.map(c => ({ value: c.id, label: c.name }))]}
-                            />
+                        <div className="relative" ref={cityDropdownRef}>
+                            <button
+                                onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
+                                className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                                Cities
+                            </button>
+                            {cityDropdownOpen && (
+                                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-64">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        <label key="all-cities" className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={selectedCity === 'all'}
+                                                onChange={() => { setSelectedCity('all'); setPage(1); setCityDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">All Cities</span>
+                                        </label>
+                                        {cities.map(city => (
+                                            <label key={city.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                <input
+                                                    type="radio"
+                                                    checked={selectedCity === city.id}
+                                                    onChange={() => { setSelectedCity(city.id); setPage(1); setCityDropdownOpen(false); }}
+                                                    className="w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-gray-700">{city.name}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="w-48">
-                            <Select
-                                value={selectedNationality}
-                                onChange={(value) => { setSelectedNationality(String(value)); setPage(1); }}
-                                placeholder="All Nationalities"
-                                options={uniqueNationalities.map(n => ({ value: n, label: n }))}
-                            />
+                        <div className="relative" ref={nationalityDropdownRef}>
+                            <button
+                                onClick={() => setNationalityDropdownOpen(!nationalityDropdownOpen)}
+                                className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                                Nationalities
+                            </button>
+                            {nationalityDropdownOpen && (
+                                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-64">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        <label key="all-nationalities" className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={selectedNationality === 'all'}
+                                                onChange={() => { setSelectedNationality('all'); setPage(1); setNationalityDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">All Nationalities</span>
+                                        </label>
+                                        {uniqueNationalities.map(nationality => (
+                                            <label key={nationality} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                <input
+                                                    type="radio"
+                                                    checked={selectedNationality === nationality}
+                                                    onChange={() => { setSelectedNationality(nationality); setPage(1); setNationalityDropdownOpen(false); }}
+                                                    className="w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-gray-700">{nationality}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="w-48">
-                            <Select
-                                value={selectedTag}
-                                onChange={(value) => { setSelectedTag(value === 'all' ? 'all' : Number(value)); setPage(1); }}
-                                placeholder="All Tags"
-                                options={tags.map(t => ({ value: t.id, label: t.name }))}
-                            />
-                        </div>
+
 
                         {isAdmin && (
-                            <div className="w-48">
-                                <Select
-                                    value={selectedManager}
-                                    onChange={(value) => { setSelectedManager(value === 'all' ? 'all' : Number(value)); setPage(1); }}
-                                    placeholder="All Managers"
-                                    options={managers.map(m => ({ value: m.id, label: `${m.firstname} ${m.lastname}` }))}
-                                />
+                            <div className="relative" ref={managerDropdownRef}>
+                                <button
+                                    onClick={() => setManagerDropdownOpen(!managerDropdownOpen)}
+                                    className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                >
+                                    Managers
+                                </button>
+                                {managerDropdownOpen && (
+                                    <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-64">
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            <label key="all-managers" className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                <input
+                                                    type="radio"
+                                                    checked={selectedManager === 'all'}
+                                                    onChange={() => { setSelectedManager('all'); setPage(1); setManagerDropdownOpen(false); }}
+                                                    className="w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-gray-700">All Managers</span>
+                                            </label>
+                                            {managers.map(manager => (
+                                                <label key={manager.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                    <input
+                                                        type="radio"
+                                                        checked={selectedManager === manager.id}
+                                                        onChange={() => { setSelectedManager(manager.id); setPage(1); setManagerDropdownOpen(false); }}
+                                                        className="w-4 h-4 cursor-pointer"
+                                                    />
+                                                    <span className="text-sm text-gray-700">{manager.firstname} {manager.lastname}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
+
+                        <div className="relative" ref={tagsDropdownRef}>
+                            <button
+                                onClick={() => setTagsDropdownOpen(!tagsDropdownOpen)}
+                                className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                                Tags {selectedTags.length > 0 && `(${selectedTags.length})`}
+                            </button>
+                            {tagsDropdownOpen && (
+                                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-64">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {tags.length > 0 ? (
+                                            tags.map(tag => (
+                                                <label key={tag.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedTags.includes(tag.id)}
+                                                        onChange={(e) => {
+                                                            if (e.target.checked) {
+                                                                setSelectedTags([...selectedTags, tag.id]);
+                                                            } else {
+                                                                setSelectedTags(selectedTags.filter(id => id !== tag.id));
+                                                            }
+                                                            setPage(1);
+                                                        }}
+                                                        className="w-4 h-4 rounded cursor-pointer"
+                                                    />
+                                                    <span className="text-sm text-gray-700">{tag.name}</span>
+                                                </label>
+                                            ))
+                                        ) : (
+                                            <span className="text-xs text-gray-400">No tags available</span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {hasActiveFilters && (
@@ -314,7 +449,7 @@ const Couriers = () => {
                                     <div className="flex flex-wrap gap-1 max-w-50">
                                         {c.tagIds?.length
                                             ? c.tagIds.map(id => (
-                                                <span key={id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                                                <span key={id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-gray-700">
                                                     {getTagName(id)}
                                                 </span>
                                             ))

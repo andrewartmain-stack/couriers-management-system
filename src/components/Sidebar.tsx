@@ -2,6 +2,8 @@ import { NavLink } from 'react-router-dom';
 import { CityIcon, CrownSimpleIcon, FileIcon, HouseSimpleIcon, PersonSimpleBikeIcon, TagIcon, UserIcon, GearIcon, LogIcon, UserPlusIcon } from '@phosphor-icons/react';
 import { useAppData } from '../context/AppContext';
 
+import logoIcon from "../../public/logo-icon.png";
+
 const Sidebar = () => {
     const { couriers, accounts, managers, tags, cities } = useAppData();
 
@@ -47,8 +49,9 @@ const Sidebar = () => {
 
             <div className="flex flex-col gap-6">
                 {/* Brand */}
-                <div className="px-1 pt-1">
-                    <span className="font-bold text-xl tracking-tight">Titanic S.R.L.</span>
+                <div className="px-1 pt-1 flex items-center justify-start gap-2">
+                    <img src={logoIcon} alt="logo" className='w-10' />
+                    <span className="font-bold text-xl tracking-tight">titanic</span>
                 </div>
 
                 {/* User card */}

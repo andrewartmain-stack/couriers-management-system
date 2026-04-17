@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FC } from "react";
+import { useEffect, useMemo, useState, useRef, type FC } from "react";
 import { MdCheck } from "react-icons/md";
 
 import Button from "./Button";
@@ -38,6 +38,23 @@ export const EditAccountModal: FC<EditAccountModalPropsInterface> = ({
     const [accountNameInput, setAccountNameInput] = useState<string>('');
     const [phoneNumberInput, setPhoneNumberInput] = useState<string>('');
     const [emailInput, setEmailInput] = useState<string>('');
+    const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+    const platformDropdownRef = useRef<HTMLDivElement>(null);
+    const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (platformDropdownRef.current && !platformDropdownRef.current.contains(event.target as Node)) {
+                setPlatformDropdownOpen(false);
+            }
+            if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+                setStatusDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const filteredCouriers = useMemo(() => {
         const term = courierSearch.trim().toLowerCase();
@@ -107,33 +124,60 @@ export const EditAccountModal: FC<EditAccountModalPropsInterface> = ({
                     </div>
                     {validationErrors?.courierId && <p className="text-red-400 text-sm">{validationErrors.courierId}</p>}
 
-                    <label htmlFor="platform" className="text-sm -mb-1.25">Platform</label>
-                    <select
-                        name="platform"
-                        value={selectedPlatform}
-                        onChange={(e) => setSelectedPlatform(e.target.value as "BOLT" | "WOLT" | "GLOVO")}
-                        required
-                        className="bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none"
-                    >
-                        <option value="BOLT">Bolt</option>
-                        <option value="WOLT">Wolt</option>
-                        <option value="GLOVO">Glovo</option>
-                    </select>
+                    <label className="text-sm -mb-1.25">Platform</label>
+                    <div className="relative" ref={platformDropdownRef}>
+                        <button
+                            onClick={() => setPlatformDropdownOpen(!platformDropdownOpen)}
+                            className="w-full bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm text-left transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none hover:border-gray-300"
+                        >
+                            {selectedPlatform}
+                        </button>
+                        {platformDropdownOpen && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-full">
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {['BOLT', 'WOLT', 'GLOVO'].map((option) => (
+                                        <label key={option} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={selectedPlatform === option}
+                                                onChange={() => { setSelectedPlatform(option as "BOLT" | "WOLT" | "GLOVO"); setPlatformDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">{option}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     {validationErrors?.platform && <p className="text-red-400 text-sm">{validationErrors.platform}</p>}
 
-                    <label htmlFor="status" className="text-sm -mb-1.25">Status</label>
-                    <select
-                        name="status"
-                        value={selectedStatus}
-                        onChange={(e) => setSelectedStatus(e.target.value as "BLOCKED" | "ACTIVE" | "DELETED" | "UNKNOWN")}
-                        required
-                        className="bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none"
-                    >
-                        <option value="ACTIVE">Active</option>
-                        <option value="BLOCKED">Blocked</option>
-                        <option value="DELETED">Deleted</option>
-                        <option value="UNKNOWN">Unknown</option>
-                    </select>
+                    <label className="text-sm -mb-1.25">Status</label>
+                    <div className="relative" ref={statusDropdownRef}>
+                        <button
+                            onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                            className="w-full bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm text-left transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none hover:border-gray-300"
+                        >
+                            {selectedStatus}
+                        </button>
+                        {statusDropdownOpen && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-full">
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {['ACTIVE', 'BLOCKED', 'DELETED', 'UNKNOWN'].map((option) => (
+                                        <label key={option} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={selectedStatus === option}
+                                                onChange={() => { setSelectedStatus(option as "BLOCKED" | "ACTIVE" | "DELETED" | "UNKNOWN"); setStatusDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">{option}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     {validationErrors?.status && <p className="text-red-400 text-sm">{validationErrors.status}</p>}
 
                     <label htmlFor="accountUID" className="text-sm -mb-1.25">Account UID</label>

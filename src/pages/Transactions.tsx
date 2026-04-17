@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { MdError, MdCheckCircle, MdDelete, MdEdit, MdCheck, MdClose, MdUpload, MdDownload } from "react-icons/md";
 import Button from "../components/Button";
-import Select from "../components/Select";
 import Spinner from "../components/Spinner";
 import { getAuthHeaders, getAuthHeadersNoContentType, BASE_URL } from "../utils/index";
 
@@ -49,11 +48,28 @@ const Transactions = () => {
     const [editDescription, setEditDescription] = useState("");
     const [saving, setSaving] = useState(false);
     const [uploadingId, setUploadingId] = useState<number | null>(null);
+    const [editTypeDropdownOpen, setEditTypeDropdownOpen] = useState(false);
+    const [formTypeDropdownOpen, setFormTypeDropdownOpen] = useState(false);
+    const editTypeDropdownRef = useRef<HTMLDivElement>(null);
+    const formTypeDropdownRef = useRef<HTMLDivElement>(null);
 
     const showAlert = (type: "error" | "success", message: string) => {
         setAlert({ isActive: true, type, message });
         setTimeout(() => setAlert(prev => ({ ...prev, isActive: false })), 3000);
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (editTypeDropdownRef.current && !editTypeDropdownRef.current.contains(event.target as Node)) {
+                setEditTypeDropdownOpen(false);
+            }
+            if (formTypeDropdownRef.current && !formTypeDropdownRef.current.contains(event.target as Node)) {
+                setFormTypeDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const fetchTransactions = async () => {
         try {
@@ -262,14 +278,31 @@ const Transactions = () => {
             {/* New Transaction Form */}
             {showForm && (
                 <div className="flex gap-4 items-center py-2">
-                    <select
-                        value={newType}
-                        onChange={e => setNewType(e.target.value as "INCOME" | "EXPENSE")}
-                        className="bg-transparent text-sm text-gray-700 focus:outline-none cursor-pointer"
-                    >
-                        <option value="INCOME">INCOME</option>
-                        <option value="EXPENSE">EXPENSE</option>
-                    </select>
+                    <div className="relative" ref={formTypeDropdownRef}>
+                        <button
+                            onClick={() => setFormTypeDropdownOpen(!formTypeDropdownOpen)}
+                            className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                        >
+                            {newType}
+                        </button>
+                        {formTypeDropdownOpen && (
+                            <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-40">
+                                <div className="space-y-2">
+                                    {['INCOME', 'EXPENSE'].map(type => (
+                                        <label key={type} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={newType === (type as "INCOME" | "EXPENSE")}
+                                                onChange={() => { setNewType(type as "INCOME" | "EXPENSE"); setFormTypeDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">{type}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <div className="w-px h-4 bg-gray-200" />
                     <input
                         type="number"
@@ -321,14 +354,31 @@ const Transactions = () => {
                                     {editingId === t.id ? (
                                         <>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <Select
-                                                    value={editType}
-                                                    onChange={(value) => setEditType(value as "INCOME" | "EXPENSE")}
-                                                    options={[
-                                                        { value: 'INCOME', label: 'INCOME' },
-                                                        { value: 'EXPENSE', label: 'EXPENSE' }
-                                                    ]}
-                                                />
+                                                <div className="relative" ref={editTypeDropdownRef}>
+                                                    <button
+                                                        onClick={() => setEditTypeDropdownOpen(!editTypeDropdownOpen)}
+                                                        className="px-3 py-1 text-sm border border-gray-300 rounded bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                                    >
+                                                        {editType}
+                                                    </button>
+                                                    {editTypeDropdownOpen && (
+                                                        <div className="absolute top-full left-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-2 min-w-40">
+                                                            <div className="space-y-1">
+                                                                {['INCOME', 'EXPENSE'].map(type => (
+                                                                    <label key={type} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                                        <input
+                                                                            type="radio"
+                                                                            checked={editType === (type as "INCOME" | "EXPENSE")}
+                                                                            onChange={() => { setEditType(type as "INCOME" | "EXPENSE"); setEditTypeDropdownOpen(false); }}
+                                                                            className="w-4 h-4 cursor-pointer"
+                                                                        />
+                                                                        <span className="text-sm text-gray-700">{type}</span>
+                                                                    </label>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <input

@@ -4,8 +4,10 @@ import { getAuthHeaders, BASE_API } from "../utils/index";
 
 import Button from "../components/Button";
 import Card from "../components/Card";
+import Spinner from "../components/Spinner";
+import Input from "../components/Input";
 
-import { MdError } from "react-icons/md";
+import { MdError, MdSearch, MdFilterList, MdClear } from "react-icons/md";
 
 import type { Report } from "../types";
 import { StartNewReportModal } from "../components/StartNewReportModal";
@@ -16,6 +18,9 @@ const Reports = () => {
     const [isStartNewReportModalOpen, setIsStartNewReportModalOpen] = useState(false);
     const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
     const [reports, setReports] = useState<Report[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [search, setSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'OPENED' | 'CLOSED'>('all');
     const [alert, setAlert] = useState<{
         isActive: boolean;
         type: "error" | "success";
@@ -100,23 +105,31 @@ const Reports = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
+                setLoading(true);
                 const response = await fetch(
                     `${BASE_API}/reports`,
                     { headers: getAuthHeaders() }
                 );
 
-
-                console.log(response);
-
                 const data = await response.json();
                 setReports(data);
             } catch (error) {
                 console.error(error);
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchData();
     }, [alert.type === 'success' && alert.isActive === true]);
+
+    const filtered = reports.filter(report => {
+        if (statusFilter !== 'all' && report.status !== statusFilter) return false;
+        const searchLower = search.toLowerCase();
+        const dateRange = `${new Date(report.startedAt).toLocaleDateString("en-GB")} - ${new Date(report.endedAt).toLocaleDateString("en-GB")}`;
+        if (search && !dateRange.toLowerCase().includes(searchLower)) return false;
+        return true;
+    });
 
     return (
         <div className="w-full h-full space-y-6">
@@ -167,75 +180,121 @@ const Reports = () => {
                 </Button>
             </div>
 
+            {/* Filters */}
+            <div className="space-y-4">
+                <div className="flex flex-wrap gap-3 items-center p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-2">
+                        <MdFilterList className="text-gray-500" size={20} />
+                        <span className="text-sm font-medium text-gray-700">Filters:</span>
+                    </div>
+
+                    <div className="flex gap-3 flex-wrap flex-1">
+                        <div className="relative max-w-sm flex-1">
+                            <MdSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                            <Input
+                                nameValue="search"
+                                placeholderValue="Search by date..."
+                                inputValue={search}
+                                hasIcon
+                                onChangeAction={(e: any) => setSearch(e.target.value)}
+                            />
+                        </div>
+                    </div>
+
+                    {(statusFilter !== 'all' || search) && (
+                        <button
+                            onClick={() => { setStatusFilter('all'); setSearch(''); }}
+                            className="ml-auto px-3 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                            <MdClear size={16} />
+                            Clear Filters
+                        </button>
+                    )}
+
+                    <span className="text-sm text-gray-500">
+                        {filtered.length} {filtered.length === 1 ? 'report' : 'reports'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Loading Spinner */}
+            {loading && (
+                <div className="flex justify-center items-center py-20">
+                    <Spinner size={12} />
+                </div>
+            )}
+
             {/* Reports Grid */}
-            {reports.length === 0 ? (
+            {!loading && filtered.length === 0 ? (
                 <div className="text-gray-500 text-sm">
-                    No reports yet. Start your first one.
+                    {reports.length === 0 ? 'No reports yet. Start your first one.' : 'No reports found with the selected filters.'}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {reports.map(report => (
-                        <Card
-                            key={report.id}
-                            type="light"
-                            className="relative p-5 cursor-pointer transition duration-200 hover:shadow-xl hover:-translate-y-1"
-                            onClickAction={() => {
-                                report.status === "OPENED" && (!report.boltUploaded || !report.woltUploaded || !report.glovoUploaded) ?
-                                    navigate(`/reports/${report.id}/upload-csv`) :
-                                    navigate(`/reports/${report.id}/reports-by-managers`)
-                            }}
-                        >
-                            {/* Date Range */}
-                            <div className="text-lg font-semibold mb-3">
-                                {new Date(report.startedAt)
-                                    .toLocaleDateString("en-GB")
-                                    .replace(/\//g, ".")}
-                                {" – "}
-                                {new Date(report.endedAt)
-                                    .toLocaleDateString("en-GB")
-                                    .replace(/\//g, ".")}
-                            </div>
-
-                            {/* Income */}
-                            <div className="text-sm space-y-1 text-gray-600 mb-3">
-                                <div>Bolt: {Math.round(report.boltSum)}</div>
-                                <div>Wolt: {Math.round(report.woltSum)}</div>
-                                <div>Glovo: {Math.round(report.glovoSum)}</div>
-                            </div>
-
-                            {/* Totals */}
-                            <div className="text-sm space-y-1 text-gray-700 font-medium">
-                                <div>Profit: {Math.round(report.profits)}</div>
-                                <div>Total Income: {Math.round(report.totalIncome)}</div>
-                                <div>Total Outcome: {Math.round(report.totalOutcome)}</div>
-                            </div>
-
-                            {/* Status Badge */}
-                            <div
-                                className={`absolute bottom-4 right-4 px-3 py-1 text-xs rounded-full font-semibold
-                                    ${report.status === "OPENED"
-                                        ? "bg-green-100 text-green-700"
-                                        : "bg-gray-200 text-gray-600"
-                                    }`}
+                !loading && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {filtered.map(report => (
+                            <Card
+                                key={report.id}
+                                type="light"
+                                className="relative p-5 cursor-pointer transition duration-200 hover:shadow-xl hover:-translate-y-1"
+                                onClickAction={() => {
+                                    report.status === "OPENED" && (!report.boltUploaded || !report.woltUploaded || !report.glovoUploaded) ?
+                                        navigate(`/reports/${report.id}/upload-csv`) :
+                                        navigate(`/reports/${report.id}/reports-by-managers`)
+                                }}
                             >
-                                {report.status}
-                            </div>
+                                {/* Date Range */}
+                                <div className="text-lg font-semibold mb-3">
+                                    {new Date(report.startedAt)
+                                        .toLocaleDateString("en-GB")
+                                        .replace(/\//g, ".")}
+                                    {" – "}
+                                    {new Date(report.endedAt)
+                                        .toLocaleDateString("en-GB")
+                                        .replace(/\//g, ".")}
+                                </div>
 
-                            {/* Close Button */}
-                            {report.status === "OPENED" && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        closeReportHandler(report.id);
-                                    }}
-                                    className="absolute top-4 right-4 text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition cursor-pointer"
+                                {/* Income */}
+                                <div className="text-sm space-y-1 text-gray-600 mb-3">
+                                    <div>Bolt: {Math.round(report.boltSum)}</div>
+                                    <div>Wolt: {Math.round(report.woltSum)}</div>
+                                    <div>Glovo: {Math.round(report.glovoSum)}</div>
+                                </div>
+
+                                {/* Totals */}
+                                <div className="text-sm space-y-1 text-gray-700 font-medium">
+                                    <div>Profit: {Math.round(report.profits)}</div>
+                                    <div>Total Income: {Math.round(report.totalIncome)}</div>
+                                    <div>Total Outcome: {Math.round(report.totalOutcome)}</div>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div
+                                    className={`absolute bottom-4 right-4 px-3 py-1 text-xs rounded-full font-semibold
+                                    ${report.status === "OPENED"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-gray-200 text-gray-600"
+                                        }`}
                                 >
-                                    Close
-                                </button>
-                            )}
-                        </Card>
-                    ))}
-                </div>
+                                    {report.status}
+                                </div>
+
+                                {/* Close Button */}
+                                {report.status === "OPENED" && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            closeReportHandler(report.id);
+                                        }}
+                                        className="absolute top-4 right-4 text-xs px-3 py-1 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition cursor-pointer"
+                                    >
+                                        Close
+                                    </button>
+                                )}
+                            </Card>
+                        ))}
+                    </div>
+                )
             )}
         </div>
     );

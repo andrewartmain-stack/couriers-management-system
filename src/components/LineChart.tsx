@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
     Chart as ChartJS,
@@ -49,6 +49,18 @@ export const LineChart = ({
     const [city, setCity] = useState(citiesData[1]?.city ?? citiesData[0]?.city ?? '');
     const [weeks, setWeeks] = useState(7);
     const [animKey, setAnimKey] = useState(0);
+    const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+    const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target as Node)) {
+                setCityDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const trigger = (fn: () => void) => { fn(); setAnimKey(k => k + 1); };
 
@@ -134,31 +146,63 @@ export const LineChart = ({
             <div style={{ fontFamily: 'system-ui, sans-serif' }}>
                 {/* Controls */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <select
-                        value={city}
-                        onChange={e => trigger(() => setCity(e.target.value))}
-                        style={{
-                            padding: '4px 28px 4px 10px',
-                            borderRadius: 8,
-                            border: '#e5e7eb',
-                            background: '#fafafa',
-                            color: '#555',
-                            fontSize: 12,
-                            fontWeight: 500,
-                            cursor: 'pointer',
-                            outline: 'none',
-                            appearance: 'none',
-                            WebkitAppearance: 'none',
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23999' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
-                            backgroundRepeat: 'no-repeat',
-                            backgroundPosition: 'right 8px center',
-                            transition: 'border-color 0.2s, background 0.2s, color 0.2s',
-                            fontFamily: 'inherit',
-                        }}
-                    >
-                        <option value="all">All {groupLabel}</option>
-                        {citiesData.map(c => <option key={c.city} value={c.city}>{c.city}</option>)}
-                    </select>
+                    <div ref={cityDropdownRef} style={{ position: 'relative' }}>
+                        <button
+                            onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
+                            style={{
+                                padding: '4px 10px',
+                                borderRadius: 8,
+                                border: '1px solid #e5e7eb',
+                                background: '#fafafa',
+                                color: '#555',
+                                fontSize: 12,
+                                fontWeight: 500,
+                                cursor: 'pointer',
+                                outline: 'none',
+                                transition: 'border-color 0.2s, background 0.2s, color 0.2s',
+                                fontFamily: 'inherit',
+                            }}
+                        >
+                            {city === 'all' ? `All ${groupLabel}` : city}
+                        </button>
+                        {cityDropdownOpen && (
+                            <div style={{
+                                position: 'absolute',
+                                top: 'calc(100% + 4px)',
+                                left: 0,
+                                background: 'white',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: 8,
+                                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                                zIndex: 10,
+                                padding: 6,
+                                minWidth: 180,
+                                maxHeight: 220,
+                                overflowY: 'auto',
+                            }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 12 }} onMouseEnter={(e) => (e.currentTarget.style.background = '#f5f5f5')} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                                    <input
+                                        type="radio"
+                                        checked={city === 'all'}
+                                        onChange={() => { setCity('all'); setCityDropdownOpen(false); }}
+                                        style={{ cursor: 'pointer' }}
+                                    />
+                                    <span>All {groupLabel}</span>
+                                </label>
+                                {citiesData.map(c => (
+                                    <label key={c.city} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 12 }} onMouseEnter={(e) => (e.currentTarget.style.background = '#f5f5f5')} onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                                        <input
+                                            type="radio"
+                                            checked={city === c.city}
+                                            onChange={() => { setCity(c.city); setCityDropdownOpen(false); }}
+                                            style={{ cursor: 'pointer' }}
+                                        />
+                                        <span>{c.city}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     <div style={{ display: 'flex', gap: 1 }}>
                         {WEEKS.map(w => (

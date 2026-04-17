@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC } from "react";
+import { useEffect, useState, useRef, type FC } from "react";
 
 import Button from "./Button";
 import Input from "./Input";
@@ -31,6 +31,23 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
     const [trcFile, setTrcFile] = useState<File | null>(null);
     const [ctrInput, setCtrInput] = useState<string>('');
     const [commissionInput, setCommissionInput] = useState<string>('');
+    const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
+    const [managerDropdownOpen, setManagerDropdownOpen] = useState(false);
+    const cityDropdownRef = useRef<HTMLDivElement>(null);
+    const managerDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target as Node)) {
+                setCityDropdownOpen(false);
+            }
+            if (managerDropdownRef.current && !managerDropdownRef.current.contains(event.target as Node)) {
+                setManagerDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         setSelectedCity(citiesData[0]);
@@ -102,57 +119,61 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
                     <Input nameValue="commission" placeholderValue="5" inputValue={commissionInput} onChangeAction={(e: any) => setCommissionInput(e.target.value)} type="number" required />
                     {validationErrors?.commission && <p className="text-red-400 text-sm">{validationErrors.commission}</p>}
 
-                    <label htmlFor="city" className="text-sm -mb-1.25">Select City</label>
-                    <select
-                        name="city"
-                        value={selectedCity?.name}
-                        onChange={(e) => {
-                            const city = citiesData.find(city => city.name === e.target.value);
-                            if (city) setSelectedCity(city);
-                        }}
-                        required
-                        className="bg-gray-100
-  border border-transparent
-  rounded-full
-  py-3 px-4
-  text-sm
-
-  transition-all duration-300 ease-out
-
-  focus:bg-white
-  focus:border-black
-  focus:outline-none"
-                    >
-                        <option value="" disabled>
-                            Select city
-                        </option>
-                        {citiesData.map((city) => (
-                            <option key={city.id} value={city.name}>
-                                {city.name}
-                            </option>
-                        ))}
-                    </select>
+                    <label className="text-sm -mb-1.25">Select City</label>
+                    <div className="relative" ref={cityDropdownRef}>
+                        <button
+                            onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
+                            className="w-full bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm text-left transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none hover:border-gray-300"
+                        >
+                            {selectedCity?.name || 'Select city'}
+                        </button>
+                        {cityDropdownOpen && (
+                            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-full">
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {citiesData.map((city) => (
+                                        <label key={city.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={selectedCity?.id === city.id}
+                                                onChange={() => { setSelectedCity(city); setCityDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">{city.name}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     {isAdmin && (
                         <>
-                            <label htmlFor="manager" className="text-sm -mb-1.25">Select Manager</label>
-                            <select
-                                name="manager"
-                                value={selectedManager?.firstname + ' ' + selectedManager?.lastname}
-                                onChange={(e) => {
-                                    const manager = managersData.find(manager => manager.firstname + ' ' + manager.lastname === e.target.value);
-                                    if (manager) setSelectedManager(manager);
-                                }}
-                                required
-                                className="bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none"
-                            >
-                                <option value="" disabled>Select Manager</option>
-                                {managersData.map((manager) => (
-                                    <option key={manager.id} value={manager.firstname + ' ' + manager.lastname}>
-                                        {manager.firstname + ' ' + manager.lastname}
-                                    </option>
-                                ))}
-                            </select>
+                            <label className="text-sm -mb-1.25">Select Manager</label>
+                            <div className="relative" ref={managerDropdownRef}>
+                                <button
+                                    onClick={() => setManagerDropdownOpen(!managerDropdownOpen)}
+                                    className="w-full bg-gray-100 border border-transparent rounded-full py-3 px-4 text-sm text-left transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none hover:border-gray-300"
+                                >
+                                    {selectedManager ? `${selectedManager.firstname} ${selectedManager.lastname}` : 'Select Manager'}
+                                </button>
+                                {managerDropdownOpen && (
+                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-full">
+                                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                                            {managersData.map((manager) => (
+                                                <label key={manager.id} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                    <input
+                                                        type="radio"
+                                                        checked={selectedManager?.id === manager.id}
+                                                        onChange={() => { setSelectedManager(manager); setManagerDropdownOpen(false); }}
+                                                        className="w-4 h-4 cursor-pointer"
+                                                    />
+                                                    <span className="text-sm text-gray-700">{manager.firstname} {manager.lastname}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
                         </>
                     )}
 
@@ -166,8 +187,8 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
                                         type="button"
                                         onClick={() => handleTagToggle(tag.id)}
                                         className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${selectedTags.includes(tag.id)
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'bg-blue-500 text-white'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                                             }`}
                                     >
                                         {tag.name}

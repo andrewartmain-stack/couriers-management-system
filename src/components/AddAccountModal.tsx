@@ -1,4 +1,4 @@
-import { useMemo, useState, type FC } from "react";
+import { useMemo, useState, useEffect, useRef, type FC } from "react";
 import { MdCheck } from "react-icons/md";
 
 import Button from "./Button";
@@ -35,6 +35,23 @@ export const AddAccountModal: FC<AddAccountModalPropsInterface> = ({
     const [accountName, setAccountName] = useState<string>("");
     const [phoneNumber, setPhoneNumber] = useState<string>("");
     const [email, setEmail] = useState<string>("");
+    const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+    const platformDropdownRef = useRef<HTMLDivElement>(null);
+    const statusDropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (platformDropdownRef.current && !platformDropdownRef.current.contains(event.target as Node)) {
+                setPlatformDropdownOpen(false);
+            }
+            if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+                setStatusDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const filteredCouriers = useMemo(() => {
         const term = courierSearch.trim().toLowerCase();
@@ -105,44 +122,71 @@ export const AddAccountModal: FC<AddAccountModalPropsInterface> = ({
                         )}
                     </div>
 
-                    {/* Platform Select */}
+                    {/* Platform Dropdown */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor="platform" className="text-sm font-medium">
+                        <label className="text-sm font-medium">
                             Platform <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            id="platform"
-                            value={platform}
-                            onChange={(e) => setPlatform(e.target.value as "BOLT" | "WOLT" | "GLOVO")}
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                        >
-                            <option value="BOLT">Bolt</option>
-                            <option value="WOLT">Wolt</option>
-                            <option value="GLOVO">Glovo</option>
-                        </select>
+                        <div className="relative" ref={platformDropdownRef}>
+                            <button
+                                onClick={() => setPlatformDropdownOpen(!platformDropdownOpen)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 text-left hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                                {platform}
+                            </button>
+                            {platformDropdownOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-full">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {['BOLT', 'WOLT', 'GLOVO'].map((option) => (
+                                            <label key={option} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                <input
+                                                    type="radio"
+                                                    checked={platform === option}
+                                                    onChange={() => { setPlatform(option as "BOLT" | "WOLT" | "GLOVO"); setPlatformDropdownOpen(false); }}
+                                                    className="w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-gray-700">{option}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         {validationErrors?.platform && (
                             <p className="text-red-400 text-sm">{validationErrors.platform}</p>
                         )}
                     </div>
 
-                    {/* Status Select */}
+                    {/* Status Dropdown */}
                     <div className="flex flex-col gap-2">
-                        <label htmlFor="status" className="text-sm font-medium">
+                        <label className="text-sm font-medium">
                             Status <span className="text-red-500">*</span>
                         </label>
-                        <select
-                            id="status"
-                            value={status}
-                            onChange={(e) =>
-                                setStatus(e.target.value as "BLOCKED" | "ACTIVE" | "DELETED" | "UNKNOWN")
-                            }
-                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                        >
-                            <option value="ACTIVE">Active</option>
-                            <option value="BLOCKED">Blocked</option>
-                            <option value="DELETED">Deleted</option>
-                            <option value="UNKNOWN">Unknown</option>
-                        </select>
+                        <div className="relative" ref={statusDropdownRef}>
+                            <button
+                                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 text-left hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                                {status}
+                            </button>
+                            {statusDropdownOpen && (
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-full">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        {['ACTIVE', 'BLOCKED', 'DELETED', 'UNKNOWN'].map((option) => (
+                                            <label key={option} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                <input
+                                                    type="radio"
+                                                    checked={status === option}
+                                                    onChange={() => { setStatus(option as "BLOCKED" | "ACTIVE" | "DELETED" | "UNKNOWN"); setStatusDropdownOpen(false); }}
+                                                    className="w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-gray-700">{option}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         {validationErrors?.status && (
                             <p className="text-red-400 text-sm">{validationErrors.status}</p>
                         )}

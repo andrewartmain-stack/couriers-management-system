@@ -62,6 +62,13 @@ const CourierDetails = () => {
         return manager ? `${manager.firstname} ${manager.lastname}` : '';
     }
 
+    const displayValue = (value: any) => {
+        if (value === null || value === undefined || value === '' || value === 0) {
+            return 'Not Set';
+        }
+        return value;
+    };
+
     const getPlatformLogo = (platform: string) => {
         switch (platform.toLowerCase()) {
             case 'bolt':
@@ -312,7 +319,7 @@ const CourierDetails = () => {
                         <MdPhone size={18} />
                         <div>
                             <p className="text-xs opacity-60">Phone</p>
-                            <p className="font-medium">{courier.phoneNumber}</p>
+                            <p className="font-medium">{displayValue(courier.phoneNumber)}</p>
                         </div>
                     </div>
                 </Card>
@@ -322,7 +329,7 @@ const CourierDetails = () => {
                         <MdPublic size={18} />
                         <div>
                             <p className="text-xs opacity-60">Nationality</p>
-                            <p className="font-medium">{courier.nationality}</p>
+                            <p className="font-medium">{displayValue(courier.nationality)}</p>
                         </div>
                     </div>
                 </Card>
@@ -332,7 +339,7 @@ const CourierDetails = () => {
                         <MdLocationCity size={18} />
                         <div>
                             <p className="text-xs opacity-60">City</p>
-                            <p className="font-medium">{getCityName(courier.cityId)}</p>
+                            <p className="font-medium">{displayValue(getCityName(courier.cityId))}</p>
                         </div>
                     </div>
                 </Card>
@@ -342,7 +349,7 @@ const CourierDetails = () => {
                         <MdPerson size={18} />
                         <div>
                             <p className="text-xs opacity-60">Manager</p>
-                            <p className="font-medium">{getManagerFullName(courier.managerId)}</p>
+                            <p className="font-medium">{displayValue(getManagerFullName(courier.managerId))}</p>
                         </div>
                     </div>
                 </Card>
@@ -352,7 +359,7 @@ const CourierDetails = () => {
                         <MdDocumentScanner size={18} />
                         <div>
                             <p className="text-xs opacity-60">CNP</p>
-                            <p className="font-medium">{courier.cnp}</p>
+                            <p className="font-medium">{displayValue(courier.cnp)}</p>
                         </div>
                     </div>
                 </Card>
@@ -367,7 +374,7 @@ const CourierDetails = () => {
                             <span className="text-sm font-medium">CTR</span>
                         </div>
                         <div>
-                            <p className="text-3xl font-bold">{courier.ctr}</p>
+                            <p className="text-3xl font-bold">{displayValue(courier.ctr)}</p>
                             <p className="text-sm opacity-75">RON</p>
                         </div>
                     </div>
@@ -380,7 +387,7 @@ const CourierDetails = () => {
                             <span className="text-sm font-medium">Commission</span>
                         </div>
                         <div>
-                            <p className="text-3xl font-bold">{courier.commission}</p>
+                            <p className="text-3xl font-bold">{displayValue(courier.commission)}</p>
                             <p className="text-sm opacity-75">Percent</p>
                         </div>
                     </div>
@@ -393,8 +400,8 @@ const CourierDetails = () => {
                             <span className="text-sm font-medium">Debt</span>
                         </div>
                         <div>
-                            <p className={`text-3xl font-bold ${courier.debt > 0 ? 'text-red-300' : ''}`}>
-                                {courier.debt}
+                            <p className={`text-3xl font-bold ${courier.debt && courier.debt > 0 ? 'text-red-300' : ''}`}>
+                                {displayValue(courier.debt)}
                             </p>
                             <p className="text-sm opacity-75">RON</p>
                         </div>
@@ -428,7 +435,7 @@ const CourierDetails = () => {
                                     <div className="space-y-2">
                                         <div>
                                             <p className="text-xs opacity-60">Account Name</p>
-                                            <p className="font-medium text-sm">{account.accountName}</p>
+                                            <p className="font-medium text-sm">{displayValue(account.accountName)}</p>
                                         </div>
 
                                         {account.accountUID && (

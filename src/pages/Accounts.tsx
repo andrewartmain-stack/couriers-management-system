@@ -1,15 +1,17 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect, useRef } from "react"
 import { MdDelete, MdEdit, MdError, MdNavigateBefore, MdNavigateNext, MdSearch, MdFilterList, MdClear } from "react-icons/md";
 import Spinner from "../components/Spinner";
 import Button from "../components/Button";
 import Input from "../components/Input";
-import Select from "../components/Select";
 import { AddAccountModal } from "../components/AddAccountModal";
 import { EditAccountModal } from "../components/EditAccountModal";
 import { DeletionModal } from '../components/DeletionModal'
 import { useAppData } from '../context/AppContext';
 import type { Account } from '../types/index'
 import { getAuthHeaders, BASE_API } from '../utils/index';
+import logoBolt from "../../public/bolt-1.svg"
+import logoWolt from '../../public/idcxOwdB80_1769177945180.jpeg'
+import logoGlovo from '../../public/idgSGGe-zp_1769177931923.jpeg'
 
 const ITEMS_PER_PAGE = 20;
 
@@ -40,6 +42,10 @@ const Accounts = () => {
     const [search, setSearch] = useState('');
     const [platformFilter, setPlatformFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [platformDropdownOpen, setPlatformDropdownOpen] = useState(false);
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+    const platformDropdownRef = useRef<HTMLDivElement>(null);
+    const statusDropdownRef = useRef<HTMLDivElement>(null);
     const [page, setPage] = useState(1);
     const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
     const [alert, setAlert] = useState<{ on: boolean; type: 'error' | 'success'; msg: string }>({
@@ -50,6 +56,19 @@ const Accounts = () => {
         setAlert({ on: true, type, msg });
         setTimeout(() => setAlert(a => ({ ...a, on: false })), 3000);
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (platformDropdownRef.current && !platformDropdownRef.current.contains(event.target as Node)) {
+                setPlatformDropdownOpen(false);
+            }
+            if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+                setStatusDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const filtered = useMemo(() => baseAccounts.filter(a => {
         // Platform filter
@@ -150,12 +169,16 @@ const Accounts = () => {
 
     // --- badges ---
     const platformBadge = (p: string) => {
-        const m: Record<string, string> = {
-            bolt: 'bg-green-100 text-green-700',
-            wolt: 'bg-blue-100 text-blue-700',
-            glovo: 'bg-yellow-100 text-yellow-700',
-        };
-        return <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${m[p.toLowerCase()] ?? m.bolt}`}>{p}</span>;
+        switch (p.toLowerCase()) {
+            case 'bolt':
+                return <img src={logoBolt} alt="Bolt" className="w-6 h-6 object-contain rounded" />;
+            case 'wolt':
+                return <img src={logoWolt} alt="Wolt" className="w-6 h-6 object-contain rounded" />;
+            case 'glovo':
+                return <img src={logoGlovo} alt="Glovo" className="w-6 h-6 object-contain rounded" />;
+            default:
+                return <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-700">{p}</span>;
+        }
     };
 
     const statusBadge = (s: string) => {
@@ -226,31 +249,78 @@ const Accounts = () => {
                     </div>
 
                     <div className="flex gap-3 flex-wrap flex-1">
-                        <div className="w-48">
-                            <Select
-                                value={platformFilter}
-                                onChange={(value) => { setPlatformFilter(String(value)); setPage(1); }}
-                                placeholder="All Platforms"
-                                options={[
-                                    { value: 'bolt', label: 'Bolt' },
-                                    { value: 'wolt', label: 'Wolt' },
-                                    { value: 'glovo', label: 'Glovo' }
-                                ]}
-                            />
+                        <div className="relative" ref={platformDropdownRef}>
+                            <button
+                                onClick={() => setPlatformDropdownOpen(!platformDropdownOpen)}
+                                className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center gap-2"
+                            >
+                                {platformFilter ? platformBadge(platformFilter) : null}
+                                <span>{platformFilter ? platformFilter.charAt(0).toUpperCase() + platformFilter.slice(1) : 'Platforms'}</span>
+                            </button>
+                            {platformDropdownOpen && (
+                                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-64">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        <label className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={platformFilter === ''}
+                                                onChange={() => { setPlatformFilter(''); setPage(1); setPlatformDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">All Platforms</span>
+                                        </label>
+                                        {['bolt', 'wolt', 'glovo'].map(platform => (
+                                            <label key={platform} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                <input
+                                                    type="radio"
+                                                    checked={platformFilter === platform}
+                                                    onChange={() => { setPlatformFilter(platform); setPage(1); setPlatformDropdownOpen(false); }}
+                                                    className="w-4 h-4 cursor-pointer"
+                                                />
+                                                <div className="flex items-center gap-2">
+                                                    {platformBadge(platform)}
+                                                    <span className="text-sm text-gray-700">{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                                                </div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="w-48">
-                            <Select
-                                value={statusFilter}
-                                onChange={(value) => { setStatusFilter(String(value)); setPage(1); }}
-                                placeholder="All Statuses"
-                                options={[
-                                    { value: 'active', label: 'Active' },
-                                    { value: 'blocked', label: 'Blocked' },
-                                    { value: 'deleted', label: 'Deleted' },
-                                    { value: 'unknown', label: 'Unknown' }
-                                ]}
-                            />
+                        <div className="relative" ref={statusDropdownRef}>
+                            <button
+                                onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                                className="px-4 py-2 text-sm border border-gray-300 rounded-lg bg-white text-gray-700 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                            >
+                                Statuses
+                            </button>
+                            {statusDropdownOpen && (
+                                <div className="absolute top-full left-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-3 min-w-64">
+                                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                                        <label className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                            <input
+                                                type="radio"
+                                                checked={statusFilter === ''}
+                                                onChange={() => { setStatusFilter(''); setPage(1); setStatusDropdownOpen(false); }}
+                                                className="w-4 h-4 cursor-pointer"
+                                            />
+                                            <span className="text-sm text-gray-700">All Statuses</span>
+                                        </label>
+                                        {['active', 'blocked', 'deleted', 'unknown'].map(status => (
+                                            <label key={status} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                                                <input
+                                                    type="radio"
+                                                    checked={statusFilter === status}
+                                                    onChange={() => { setStatusFilter(status); setPage(1); setStatusDropdownOpen(false); }}
+                                                    className="w-4 h-4 cursor-pointer"
+                                                />
+                                                <span className="text-sm text-gray-700">{status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
