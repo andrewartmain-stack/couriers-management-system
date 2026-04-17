@@ -10,7 +10,7 @@ const Settings = () => {
     ];
 
     return (
-        <div className="max-w-2xl flex flex-col gap-8">
+        <div className="max-w-2xl min-h-screen flex flex-col gap-8">
             <div>
                 <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
                 <p className="text-sm text-[var(--text-secondary)] mt-1">Manage your account information.</p>

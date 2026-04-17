@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { CityIcon, CrownSimpleIcon, FileIcon, HouseSimpleIcon, PersonSimpleBikeIcon, TagIcon, UserIcon, GearIcon, LogIcon, UserPlusIcon } from '@phosphor-icons/react';
 import { useAppData } from '../context/AppContext';
 
-import logoIcon from "../../public/logo-icon.png";
+import logoIcon from "../../public/logo-icon-white.png";
 
 const Sidebar = () => {
     const { couriers, accounts, managers, tags, cities } = useAppData();
@@ -38,40 +38,40 @@ const Sidebar = () => {
     ];
 
     const linkStyle = ({ isActive }: { isActive: boolean }) => ({
-        background: isActive ? 'var(--accent-dark)' : '',
-        color: isActive ? 'white' : 'var(--text-primary)',
+        background: isActive ? 'rgba(255, 255, 255, 0.2)' : '',
+        color: isActive ? 'white' : 'white',
     });
 
-    const linkCls = "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-(--bg-hover)";
+    const linkCls = "flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all hover:bg-white/10";
 
     return (
-        <aside className="h-screen w-62 border-r border-[var(--border-default)] flex flex-col justify-between px-3 py-5 bg-[var(--bg-app)]">
+        <aside className="h-screen w-62 border-r flex flex-col justify-between px-3 py-5 bg-black/95">
 
             <div className="flex flex-col gap-6">
                 {/* Brand */}
                 <div className="px-1 pt-1 flex items-center justify-start gap-2">
                     <img src={logoIcon} alt="logo" className='w-10' />
-                    <span className="font-bold text-xl tracking-tight">titanic<span className="text-blue-600">.</span></span>
+                    <span className="font-bold text-xl tracking-tight text-white">titanic<span className="text-blue-400">.</span></span>
                 </div>
 
                 {/* User card */}
-                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gray-100">
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/10 border border-white/20">
                     <div className="flex flex-col min-w-0 gap-0.5">
                         <div className="flex items-center gap-1.5">
-                            <span className="text-sm font-semibold truncate leading-tight">{username}</span>
+                            <span className="text-sm font-semibold truncate leading-tight text-white">{username}</span>
                             {role && (
-                                <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-[var(--accent-dark)] text-white shrink-0">
+                                <span className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md bg-yellow-500 text-white shrink-0">
                                     {role.replace('ROLE_', '')}
                                 </span>
                             )}
                         </div>
-                        <span className="text-[11px] text-[var(--text-secondary)] truncate">{email}</span>
+                        <span className="text-[11px] text-gray-300 truncate">{email}</span>
                     </div>
                 </div>
 
                 {/* Nav */}
                 <nav className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-secondary)] px-3 mb-1.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-3 mb-1.5">
                         Navigation
                     </span>
                     {navItems.map(({ to, label, icon: Icon, total }) => (
@@ -81,7 +81,7 @@ const Sidebar = () => {
                                 {label}
                             </div>
                             {total ? (
-                                <div className="bg-green-200 px-1 py-px text-xs rounded-md text-green-700">
+                                <div className="bg-green-100 px-1 py-px text-xs rounded-md text-emerald-700 font-medium">
                                     {total}
                                 </div>
                             ) : null}
@@ -92,14 +92,14 @@ const Sidebar = () => {
 
             {/* Bottom */}
             <div className="flex flex-col gap-0.5">
-                <div className="h-px bg-[var(--border-default)] mb-2" />
+                <div className="h-px bg-white/20 mb-2" />
                 <NavLink to="/settings" className={linkCls} style={linkStyle}>
                     <div className="flex gap-3 items-center">
                         <GearIcon size={17} /> Settings
                     </div>
                 </NavLink>
                 <button
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-[var(--error-text)] hover:bg-[var(--error-bg)] cursor-pointer"
+                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all text-red-400 hover:bg-red-500/20 hover:text-red-300 cursor-pointer"
                     onClick={() => { localStorage.clear(); window.location.reload(); }}
                 >
                     <LogIcon size={17} /> Logout

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { MdError, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { BASE_URL } from "../utils/index";
 import logoIcon from "/logo-icon.png";
-import deliveryImage from "../../public/bolt_food.courier.webp";
+import deliveryImage from "../../public/login-image.png";
 
 interface LoginResponse {
     token: string;

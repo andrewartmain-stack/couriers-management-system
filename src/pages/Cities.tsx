@@ -41,7 +41,7 @@ const Cities = () => {
     };
 
     return (
-        <div className="w-full h-full space-y-6">
+        <div className="w-full min-h-screen space-y-6">
             {alert.on && (
                 <div className={`fixed top-5 right-5 z-100 max-w-sm w-full shadow-xl rounded-2xl p-4 animate-toast
                     ${alert.type === 'error' ? 'bg-[var(--error-bg)] text-[var(--error-text)]' : 'bg-green-100 text-green-700'}`}>

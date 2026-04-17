@@ -132,7 +132,7 @@ const Reports = () => {
     });
 
     return (
-        <div className="w-full h-full space-y-6">
+        <div className="w-full min-h-screen space-y-6">
 
             {/* Modal */}
             {isStartNewReportModalOpen && (

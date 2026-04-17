@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react"
 import { NavLink } from "react-router-dom"
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaWhatsapp } from "react-icons/fa";
 import { MdDelete, MdEdit, MdError, MdNavigateBefore, MdNavigateNext, MdSearch, MdFilterList, MdClear } from "react-icons/md";
 import { AddCourierModal } from "../components/AddCourierModal";
 import { EditCourierModal } from "../components/EditCourierModal";
@@ -460,6 +460,17 @@ const Couriers = () => {
                                 <td className="px-4 py-3">{getManagerName(c.managerId)}</td>
                                 <td className="px-4 py-3 text-right">
                                     <div className="flex justify-end gap-2">
+                                        {isAdmin && c.phoneNumber && (
+                                            <a
+                                                href={`https://web.whatsapp.com/send?phone=${c.phoneNumber.replace(/\D/g, '')}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="cursor-pointer text-green-600 hover:text-green-700"
+                                                title="Open WhatsApp chat"
+                                            >
+                                                <FaWhatsapp size={16} />
+                                            </a>
+                                        )}
                                         <NavLink to={`/couriers/${c.id}`}><FaEye size={16} /></NavLink>
                                         <button className="cursor-pointer" onClick={() => { setToEdit(c); setIsEditOpen(true); }}>
                                             <MdEdit size={16} />

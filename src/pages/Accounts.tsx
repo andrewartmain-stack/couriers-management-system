@@ -192,7 +192,7 @@ const Accounts = () => {
     };
 
     return (
-        <div className="w-full space-y-6">
+        <div className="w-full min-h-screen space-y-6">
             {isAddOpen && (
                 <AddAccountModal
                     onClose={() => { setIsAddOpen(false); setValidationErrors(null); }}
@@ -340,7 +340,7 @@ const Accounts = () => {
                 </div>
             </div>
 
-            <div className="relative flex flex-col space-y-4">
+            <div className="relative flex flex-col space-y-4 overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead className="text-left">
                         <tr>

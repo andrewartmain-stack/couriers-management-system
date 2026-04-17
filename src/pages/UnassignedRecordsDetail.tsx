@@ -955,7 +955,7 @@ const UnassignedRecordsDetail = () => {
     };
 
     return (
-        <div className="w-full h-full space-y-6">
+        <div className="w-full min-h-screen space-y-6">
             {alert.isActive && (
                 <div className={`
                 fixed top-5 right-5 z-100

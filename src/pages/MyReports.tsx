@@ -47,7 +47,7 @@ const MyReports = () => {
     if (loading) return <div className="flex justify-center mt-20"><Spinner size={10} /></div>;
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 min-h-screen">
             <div>
                 <h1 className="text-2xl font-semibold tracking-tight">My Reports</h1>
                 <p className="text-sm text-gray-400 mt-1">Reports associated with your account.</p>
