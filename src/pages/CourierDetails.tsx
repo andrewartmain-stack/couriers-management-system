@@ -53,6 +53,10 @@ const CourierDetails = () => {
         return tags.find(tag => tag.id === id)?.name || '';
     }
 
+    const getTag = (id: number) => {
+        return tags.find(tag => tag.id === id);
+    }
+
     const getCityName = (id: number) => {
         return cities.find(city => city.id === id)?.name || '';
     }
@@ -63,7 +67,7 @@ const CourierDetails = () => {
     }
 
     const displayValue = (value: any) => {
-        if (value === null || value === undefined || value === '' || value === 0) {
+        if (value === null || value === undefined || value === '') {
             return 'Not Set';
         }
         return value;
@@ -278,7 +282,7 @@ const CourierDetails = () => {
     console.log(courier);
 
     return (
-        <div className="w-full space-y-6">
+        <div className="w-full min-h-screen space-y-6">
             {/* Alert */}
             {alert.isActive && (
                 <div className={`fixed top-5 right-5 z-100 max-w-sm w-full shadow-xl rounded-2xl p-4 animate-toast
@@ -298,14 +302,18 @@ const CourierDetails = () => {
                     </h2>
                     <div className="flex flex-wrap gap-2">
                         {courier.tagIds?.length ? (
-                            courier.tagIds.map(tag => (
-                                <span
-                                    key={tag}
-                                    className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100"
-                                >
-                                    {getTagName(tag)}
-                                </span>
-                            ))
+                            courier.tagIds.map(tagId => {
+                                const tag = getTag(tagId);
+                                return (
+                                    <span
+                                        key={tagId}
+                                        className="px-2 py-0.5 text-xs font-medium rounded-full"
+                                        style={{ backgroundColor: tag?.colour + '15', color: tag?.colour }}
+                                    >
+                                        {tag?.name}
+                                    </span>
+                                );
+                            })
                         ) : null}
                     </div>
                 </div>

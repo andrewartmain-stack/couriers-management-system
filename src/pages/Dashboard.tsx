@@ -129,11 +129,11 @@ const Dashboard = () => {
         const labels = sorted.map(([, v]) => v.label);
         const zeros = Array(sorted.length).fill(0);
 
-        const data = cities.slice(0, 6).map((city, i) => ({
+        const data = cities.map((city, i) => ({
             city: city.name,
             currentYearData: sorted.map(([, v]) => v.counts[city.id] ?? 0),
             previousYearData: zeros,
-            color: CITY_COLORS[i],
+            color: CITY_COLORS[i % CITY_COLORS.length],
         }));
 
         return { courierChartData: data, courierLabels: labels };
@@ -194,7 +194,7 @@ const Dashboard = () => {
         .slice(0, 8);
 
     return (
-        <div className="flex flex-col gap-10">
+        <div className="flex min-h-screen flex-col gap-10">
             {alert.on && (
                 <div className={`fixed top-5 right-5 z-100 max-w-sm w-full shadow-xl rounded-2xl p-4 animate-toast
                     ${alert.type === 'error' ? 'bg-(--error-bg) text-(--error-text)' : 'bg-green-100 text-green-700'}`}>

@@ -6,7 +6,7 @@ import type { Tag } from "../types";
 
 interface EditTagModalPropsInterface {
     onClose: () => void;
-    editTag: (tagId: number, name: string, description: string) => void;
+    editTag: (tagId: number, name: string, description: string, colour: string) => void;
     tag: Tag;
     validationErrors: Record<string, string> | null;
 }
@@ -15,10 +15,12 @@ export const EditTagModal: FC<EditTagModalPropsInterface> = ({ onClose, editTag,
 
     const [nameInput, setNameInput] = useState<string>('');
     const [descriptionInput, setDescriptionInput] = useState<string>('');
+    const [colourInput, setColourInput] = useState<string>('');
 
     useEffect(() => {
         setNameInput(tag.name);
         setDescriptionInput(tag.description || '');
+        setColourInput(tag.colour || '#3B82F6');
     }, [tag]);
 
     return (
@@ -50,6 +52,18 @@ export const EditTagModal: FC<EditTagModalPropsInterface> = ({ onClose, editTag,
                         className="bg-gray-100 border border-transparent rounded-2xl py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none resize-none"
                     />
                     {validationErrors?.description && <p className="text-red-400 text-sm">{validationErrors.description}</p>}
+
+                    <label htmlFor="colour" className="text-sm -mb-1.25">Tag Color</label>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="color"
+                            name="colour"
+                            value={colourInput}
+                            onChange={(e) => setColourInput(e.target.value)}
+                            className="w-12 h-10 rounded-lg cursor-pointer border border-gray-200"
+                        />
+                        <span className="text-sm text-gray-600">{colourInput}</span>
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-2 mt-6">
@@ -60,7 +74,7 @@ export const EditTagModal: FC<EditTagModalPropsInterface> = ({ onClose, editTag,
                         Cancel
                     </Button>
                     <Button
-                        onClickAction={() => editTag(tag.id, nameInput.trim(), descriptionInput.trim())}
+                        onClickAction={() => editTag(tag.id, nameInput.trim(), descriptionInput.trim(), colourInput)}
                     >
                         Update
                     </Button>

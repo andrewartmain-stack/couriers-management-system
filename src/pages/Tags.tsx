@@ -27,13 +27,13 @@ const Tags = () => {
         setTimeout(() => setAlert(a => ({ ...a, on: false })), 3000);
     };
 
-    const addTag = async (name: string, description: string) => {
+    const addTag = async (name: string, description: string, colour: string) => {
         if (!name) return showAlert('error', 'Please complete name field');
         try {
             const res = await fetch(`${BASE_API}/tags`, {
                 method: 'POST',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ name, description }),
+                body: JSON.stringify({ name, description, colour }),
             });
             if (res.ok) {
                 refresh();
@@ -48,13 +48,13 @@ const Tags = () => {
         } catch (e: any) { showAlert('error', e.message); }
     };
 
-    const editTag = async (tagId: number, name: string, description: string) => {
+    const editTag = async (tagId: number, name: string, description: string, colour: string) => {
         if (!name) return showAlert('error', 'Please complete name field');
         try {
             const res = await fetch(`${BASE_API}/tags/${tagId}`, {
-                method: 'PATCH',
+                method: 'PUT',
                 headers: getAuthHeaders(),
-                body: JSON.stringify({ name, description }),
+                body: JSON.stringify({ name, description, colour }),
             });
             if (res.ok) {
                 refresh();
@@ -153,10 +153,10 @@ const Tags = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filtered.map(tag => (
-                        <div key={tag.id} className="group bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition">
+                        <div key={tag.id} className="group rounded-lg p-4 shadow-sm hover:shadow-md transition" style={{ borderColor: tag.colour, backgroundColor: tag.colour + '15' }}>
                             <div className="flex items-start justify-between mb-2">
                                 <div className="flex-1">
-                                    <h3 className="text-sm font-semibold text-gray-800">#{tag.name}</h3>
+                                    <h3 className="text-sm font-semibold" style={{ color: tag.colour }}>#{tag.name}</h3>
                                     {tag.description && (
                                         <p className="text-xs text-gray-500 mt-1 line-clamp-2">{tag.description}</p>
                                     )}

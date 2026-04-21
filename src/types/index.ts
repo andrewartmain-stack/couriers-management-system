@@ -49,6 +49,7 @@ export type Tag = {
   id: number;
   name: string;
   description: string;
+  colour: string;
   createdAt: string;
   updatedAt: string;
 };

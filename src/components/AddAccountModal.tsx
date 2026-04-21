@@ -246,14 +246,13 @@ export const AddAccountModal: FC<AddAccountModalPropsInterface> = ({
                     {/* Email */}
                     <div className="flex flex-col gap-2">
                         <label htmlFor="email" className="text-sm font-medium">
-                            Email <span className="text-red-500">*</span>
+                            Email <span className="text-gray-400 text-xs font-normal">(optional)</span>
                         </label>
                         <Input
                             nameValue="email"
                             placeholderValue="john.doe@bolt.com"
                             inputValue={email}
                             onChangeAction={(e: any) => setEmail(e.target.value)}
-                            required
                         />
                         {validationErrors?.email && (
                             <p className="text-red-400 text-sm">{validationErrors.email}</p>

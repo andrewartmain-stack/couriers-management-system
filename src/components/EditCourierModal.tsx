@@ -203,9 +203,13 @@ export const EditCourierModal: FC<EditCourierModalPropsInterface> = ({
                                         type="button"
                                         onClick={() => handleTagToggle(tag.id)}
                                         className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${selectedTags.includes(tag.id)
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                ? 'text-white'
+                                                : 'hover:opacity-80'
                                             }`}
+                                        style={{
+                                            backgroundColor: selectedTags.includes(tag.id) ? tag.colour : tag.colour + '30',
+                                            color: selectedTags.includes(tag.id) ? 'white' : tag.colour,
+                                        }}
                                     >
                                         {tag.name}
                                     </button>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import Button from "../components/Button";
 import { MdError, MdEdit, MdCheck, MdClose, MdCheckCircle, MdFiberManualRecord } from "react-icons/md";
@@ -66,11 +66,46 @@ interface WoltRecord {
     courierTotal: number;
 }
 
+interface NegroRecord {
+    id: number;
+    personalCourierId: number;
+    target: number;
+    accounts: string;
+    boltEarning: number;
+    woltEarning: number;
+    glovoEarning: number;
+    totalEarning: number;
+    paidBike: number;
+    bikeDifference: number;
+    bikeFromCompany: number;
+    accommodation: number;
+    compensation: number;
+    compensationReason: string;
+    managerCommission: number;
+    courierTotalWithoutBikeDifference: number;
+    courierTotal: number;
+}
+
+interface NegroUpdateDto {
+    id: number;
+    paidBike: number;
+    bikeFromCompany: number;
+    compensation: number;
+    managerCommission: number;
+    compensationReason: string;
+}
+
 type CourierRecord = BoltRecord | GlovoRecord | WoltRecord;
 
 interface EditingCell {
     recordId: number;
     field: 'ctr' | 'commission';
+    value: string;
+}
+
+interface NegroEditingCell {
+    recordId: number;
+    field: 'paidBike' | 'bikeFromCompany' | 'compensation' | 'managerCommission' | 'compensationReason';
     value: string;
 }
 
@@ -91,23 +126,25 @@ interface ModifiedFields {
 const ManagerRecordsDetail = () => {
     const [active, setActive] = useState<string>("Bolt");
     const [records, setRecords] = useState<CourierRecord[]>([]);
+    const [negroRecords, setNegroRecords] = useState<NegroRecord[]>([]);
     const [couriers, setCouriers] = useState<Courier[]>([]);
     const [tags, setTags] = useState<Tag[]>([]);
     const [_originalRecords, setOriginalRecords] = useState<CourierRecord[]>([]);
     const [modifiedFields, setModifiedFields] = useState<ModifiedFields>({});
-    const [ownerSortDirection, setOwnerSortDirection] = useState<'asc' | 'desc' | null>(null);
+    const [negroModifiedFields, setNegroModifiedFields] = useState<{ [id: number]: { [field: string]: boolean } }>({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState<string>("");
     const [showCard, setShowCard] = useState(false);
     const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
+    const [negroEditingCell, setNegroEditingCell] = useState<NegroEditingCell | null>(null);
     const [alert, setAlert] = useState<{
         isActive: boolean;
         type: "error" | "success";
         message: string;
     }>({ isActive: false, type: "error", message: "Something went wrong" });
 
-    const { reportId, managerId } = useParams();
+    const { reportId, managerId: managerReportId } = useParams();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const managerName = searchParams.get('managerName');
@@ -115,6 +152,25 @@ const ManagerRecordsDetail = () => {
     const modifiedFieldsCount = Object.values(modifiedFields).reduce((total, fields) => {
         return total + (fields.ctr ? 1 : 0) + (fields.commission ? 1 : 0);
     }, 0);
+
+    const negroModifiedCount = useMemo(() =>
+        Object.keys(negroModifiedFields).filter(
+            id => Object.values(negroModifiedFields[Number(id)]).some(Boolean)
+        ).length,
+        [negroModifiedFields]
+    );
+
+    const currentModifiedCount = active === "Negro" ? negroModifiedCount : modifiedFieldsCount;
+
+    const courierMultiAccountData = useMemo(() => {
+        const counts: Record<number, number> = {};
+        const totals: Record<number, number> = {};
+        records.forEach(r => {
+            counts[r.personalCourierId] = (counts[r.personalCourierId] || 0) + 1;
+            totals[r.personalCourierId] = (totals[r.personalCourierId] || 0) + r.courierTotal;
+        });
+        return { counts, totals };
+    }, [records]);
 
     const cardTagId = tags.find(t => t.name.toLowerCase() === 'card')?.id ?? null;
 
@@ -128,7 +184,6 @@ const ManagerRecordsDetail = () => {
         const hasCard = courier && cardTagId !== null && courier.tagIds.includes(cardTagId);
         const cardFilter = showCard ? hasCard : !hasCard;
 
-        // Search filter - match against courier name or other name fields
         const searchLower = searchTerm.toLowerCase();
         const courierName = getCourierName(record.personalCourierId).toLowerCase();
         const firstName = 'firstname' in record ? record.firstname?.toLowerCase() : '';
@@ -144,15 +199,15 @@ const ManagerRecordsDetail = () => {
         return cardFilter && matchesSearch;
     });
 
-    const sortedRecords = ownerSortDirection
-        ? [...filteredRecords].sort((a, b) => {
-            const nameA = getCourierName(a.personalCourierId);
-            const nameB = getCourierName(b.personalCourierId);
-            return ownerSortDirection === 'asc'
-                ? nameA.localeCompare(nameB)
-                : nameB.localeCompare(nameA);
-        })
-        : filteredRecords;
+    const filteredNegroRecords = negroRecords.filter(record => {
+        const courier = couriers.find(c => c.id === record.personalCourierId);
+        const hasCard = courier && cardTagId !== null && courier.tagIds.includes(cardTagId);
+        const cardFilter = showCard ? hasCard : !hasCard;
+        const courierName = getCourierName(record.personalCourierId).toLowerCase();
+        const matchesSearch = !searchTerm || courierName.includes(searchTerm.toLowerCase());
+        return cardFilter && matchesSearch;
+    });
+
 
     useEffect(() => {
         fetch(`${BASE_API}/couriers`, { headers: getAuthHeadersNoContentType() })
@@ -164,10 +219,6 @@ const ManagerRecordsDetail = () => {
             .then(setTags)
             .catch(console.error);
     }, []);
-
-    const toggleOwnerSort = () => {
-        setOwnerSortDirection(prev => prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc');
-    };
 
     const isBoltRecord = (record: CourierRecord): record is BoltRecord => {
         return 'UID' in record;
@@ -192,14 +243,16 @@ const ManagerRecordsDetail = () => {
         const fetchData = async () => {
             try {
                 setLoading(true);
-                setRecords([]);
+                if (active === "Negro") {
+                    setNegroRecords([]);
+                } else {
+                    setRecords([]);
+                }
 
                 const platform = active.toLowerCase();
                 const response = await fetch(
-                    `${BASE_API}/records/${platform}/manager-report/${managerId}`,
-                    {
-                        headers: getAuthHeadersNoContentType(),
-                    }
+                    `${BASE_API}/records/${platform}/manager-report/${managerReportId}`,
+                    { headers: getAuthHeadersNoContentType() }
                 );
 
                 if (!response.ok) {
@@ -208,12 +261,13 @@ const ManagerRecordsDetail = () => {
 
                 const data = await response.json();
 
-                console.log(data);
-
-                setRecords(data);
-                setOriginalRecords(JSON.parse(JSON.stringify(data)));
-                setModifiedFields({});
-                setOwnerSortDirection(null);
+                if (active === "Negro") {
+                    setNegroRecords(data);
+                } else {
+                    setRecords(data);
+                    setOriginalRecords(JSON.parse(JSON.stringify(data)));
+                    setModifiedFields({});
+                }
             } catch (error) {
                 if (error instanceof Error) {
                     console.error(error.message);
@@ -224,10 +278,10 @@ const ManagerRecordsDetail = () => {
             }
         };
 
-        if (managerId) {
+        if (managerReportId) {
             fetchData();
         }
-    }, [managerId, active]);
+    }, [managerReportId, active]);
 
     const calculateCourierTotal = (
         adjustedEarnings: number,
@@ -336,13 +390,61 @@ const ManagerRecordsDetail = () => {
         showAlert("success", "Value updated successfully");
     };
 
+    // Negro edit handlers
+    const handleNegroEditClick = (recordId: number, field: NegroEditingCell['field'], currentValue: string) => {
+        setNegroEditingCell({ recordId, field, value: currentValue });
+    };
+
+    const handleNegroCancelEdit = () => {
+        setNegroEditingCell(null);
+    };
+
+    const handleNegroSaveEdit = () => {
+        if (!negroEditingCell) return;
+
+        if (negroEditingCell.field !== 'compensationReason') {
+            const val = parseInt(negroEditingCell.value);
+            if (isNaN(val) || val < 0) {
+                showAlert("error", "Please enter a valid non-negative number");
+                return;
+            }
+        }
+
+        setNegroRecords(prev => prev.map(r => {
+            if (r.id !== negroEditingCell.recordId) return r;
+            const updated = { ...r };
+            if (negroEditingCell.field === 'compensationReason') {
+                updated.compensationReason = negroEditingCell.value;
+            } else {
+                (updated as Record<string, unknown>)[negroEditingCell.field] = parseInt(negroEditingCell.value);
+            }
+            return updated;
+        }));
+
+        setNegroModifiedFields(prev => ({
+            ...prev,
+            [negroEditingCell.recordId]: {
+                ...prev[negroEditingCell.recordId],
+                [negroEditingCell.field]: true
+            }
+        }));
+
+        setNegroEditingCell(null);
+        showAlert("success", "Value updated successfully");
+    };
+
+    const handleNegroKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') handleNegroSaveEdit();
+        else if (e.key === 'Escape') handleNegroCancelEdit();
+    };
+
     const handleSaveChanges = async () => {
-        if (modifiedFieldsCount === 0) {
+        if (currentModifiedCount === 0) {
             showAlert("error", "No changes to save");
             return;
         }
 
-        if (!reportId || !managerId) {
+        if (!reportId || !managerReportId) {
             showAlert("error", "Missing report or manager report ID");
             return;
         }
@@ -350,61 +452,89 @@ const ManagerRecordsDetail = () => {
         setSaving(true);
 
         try {
-            const modifiedRecordIds = Object.keys(modifiedFields).map(Number);
-            const updates: UpdateRecordDto[] = modifiedRecordIds.map(recordId => {
-                const record = records.find(r => r.id === recordId);
-                if (!record) throw new Error(`Record ${recordId} not found`);
+            if (active === "Negro") {
+                const modifiedIds = Object.keys(negroModifiedFields)
+                    .filter(id => Object.values(negroModifiedFields[Number(id)]).some(Boolean))
+                    .map(Number);
 
-                let newCourierTotal: number;
-                let newCtr: number | null;
-                let newCommission: number | null;
+                const updates: NegroUpdateDto[] = modifiedIds.map(id => {
+                    const record = negroRecords.find(r => r.id === id);
+                    if (!record) throw new Error(`Record ${id} not found`);
+                    return {
+                        id: record.id,
+                        paidBike: record.paidBike,
+                        bikeFromCompany: record.bikeFromCompany,
+                        compensation: record.compensation,
+                        managerCommission: record.managerCommission,
+                        compensationReason: record.compensationReason,
+                    };
+                });
 
-                if (isBoltRecord(record)) {
-                    newCourierTotal = Math.trunc(record.courierTotal);
-                    newCtr = record.ctr !== null ? Math.trunc(record.ctr) : null;
-                    newCommission = record.commission !== null ? Math.trunc(record.commission) : null;
-                } else if (isGlovoRecord(record)) {
-                    newCourierTotal = Math.trunc(record.courierTotal);
-                    newCtr = record.ctr !== null ? Math.trunc(record.ctr) : null;
-                    newCommission = record.commission !== null ? Math.trunc(record.commission) : null;
-                } else if (isWoltRecord(record)) {
-                    newCourierTotal = Math.trunc(record.courierTotal);
-                    newCtr = record.ctr !== null ? Math.trunc(record.ctr) : null;
-                    newCommission = record.commission !== null ? Math.trunc(record.commission) : null;
-                } else {
-                    throw new Error("Unknown record type");
+                const response = await fetch(
+                    `${BASE_API}/records/bulk-update/negro/report/${reportId}/manager-report/${managerReportId}`,
+                    {
+                        method: "PATCH",
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify(updates)
+                    }
+                );
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.error(error);
+                    throw new Error("Failed to save changes");
                 }
 
-                return {
-                    id: record.id,
-                    newCtr,
-                    newCommission,
-                    newCourierTotal
-                };
-            });
+                setNegroModifiedFields({});
+                showAlert("success", `Successfully saved ${negroModifiedCount} change${negroModifiedCount > 1 ? 's' : ''}`);
+            } else {
+                const modifiedRecordIds = Object.keys(modifiedFields).map(Number);
+                const updates: UpdateRecordDto[] = modifiedRecordIds.map(recordId => {
+                    const record = records.find(r => r.id === recordId);
+                    if (!record) throw new Error(`Record ${recordId} not found`);
 
-            console.log("Saving updates:", updates);
+                    let newCourierTotal: number;
+                    let newCtr: number | null;
+                    let newCommission: number | null;
 
-            const response = await fetch(
-                `${BASE_API}/records/bulk-update/report/${reportId}/manager-report/${managerId}`,
-                {
-                    method: "PATCH",
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify(updates)
+                    if (isBoltRecord(record)) {
+                        newCourierTotal = Math.trunc(record.courierTotal);
+                        newCtr = record.ctr !== null ? Math.trunc(record.ctr) : null;
+                        newCommission = record.commission !== null ? Math.trunc(record.commission) : null;
+                    } else if (isGlovoRecord(record)) {
+                        newCourierTotal = Math.trunc(record.courierTotal);
+                        newCtr = record.ctr !== null ? Math.trunc(record.ctr) : null;
+                        newCommission = record.commission !== null ? Math.trunc(record.commission) : null;
+                    } else if (isWoltRecord(record)) {
+                        newCourierTotal = Math.trunc(record.courierTotal);
+                        newCtr = record.ctr !== null ? Math.trunc(record.ctr) : null;
+                        newCommission = record.commission !== null ? Math.trunc(record.commission) : null;
+                    } else {
+                        throw new Error("Unknown record type");
+                    }
+
+                    return { id: record.id, newCtr, newCommission, newCourierTotal };
+                });
+
+                const response = await fetch(
+                    `${BASE_API}/records/bulk-update/report/${reportId}/manager-report/${managerReportId}`,
+                    {
+                        method: "PATCH",
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify(updates)
+                    }
+                );
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    console.error(error);
+                    throw new Error("Failed to save changes");
                 }
-            );
 
-            if (!response.ok) {
-                const error = await response.json();
-                console.error(error);
-                throw new Error("Failed to save changes");
+                setOriginalRecords(JSON.parse(JSON.stringify(records)));
+                setModifiedFields({});
+                showAlert("success", `Successfully saved ${modifiedFieldsCount} change${modifiedFieldsCount > 1 ? 's' : ''}`);
             }
-
-
-            setOriginalRecords(JSON.parse(JSON.stringify(records)));
-            setModifiedFields({});
-
-            showAlert("success", `Successfully saved ${modifiedFieldsCount} change${modifiedFieldsCount > 1 ? 's' : ''}`);
         } catch (error) {
             console.error("Save error:", error);
             showAlert("error", (error as Error).message || "Failed to save changes");
@@ -462,16 +592,10 @@ const ManagerRecordsDetail = () => {
                         className="w-20 px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                         autoFocus
                     />
-                    <button
-                        onClick={handleSaveEdit}
-                        className="text-green-600 hover:text-green-800"
-                    >
+                    <button onClick={handleSaveEdit} className="text-green-600 hover:text-green-800">
                         <MdCheck size={18} />
                     </button>
-                    <button
-                        onClick={handleCancelEdit}
-                        className="text-red-600 hover:text-red-800"
-                    >
+                    <button onClick={handleCancelEdit} className="text-red-600 hover:text-red-800">
                         <MdClose size={18} />
                     </button>
                 </div>
@@ -493,7 +617,56 @@ const ManagerRecordsDetail = () => {
         );
     };
 
+    const renderNegroEditableCell = (
+        record: NegroRecord,
+        field: NegroEditingCell['field'],
+        value: number | string
+    ) => {
+        const isEditing = negroEditingCell?.recordId === record.id && negroEditingCell?.field === field;
+        const isModified = negroModifiedFields[record.id]?.[field] || false;
+        const isString = field === 'compensationReason';
+
+        if (isEditing) {
+            return (
+                <div className="flex items-center gap-2">
+                    <input
+                        type={isString ? "text" : "number"}
+                        min={isString ? undefined : 0}
+                        value={negroEditingCell.value}
+                        onChange={(e) => setNegroEditingCell({ ...negroEditingCell, value: e.target.value })}
+                        onKeyDown={handleNegroKeyDown}
+                        className={`px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 ${isString ? 'w-40' : 'w-20'}`}
+                        autoFocus
+                    />
+                    <button onClick={handleNegroSaveEdit} className="text-green-600 hover:text-green-800">
+                        <MdCheck size={18} />
+                    </button>
+                    <button onClick={handleNegroCancelEdit} className="text-red-600 hover:text-red-800">
+                        <MdClose size={18} />
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center justify-end gap-2 group">
+                <span className={isModified ? "text-blue-600 font-semibold" : ""}>
+                    {value?.toString() || '-'}
+                </span>
+                <button
+                    onClick={() => handleNegroEditClick(record.id, field, value?.toString() || '')}
+                    className="opacity-0 group-hover:opacity-100 text-blue-600 hover:text-blue-800 transition-opacity"
+                >
+                    <MdEdit size={16} />
+                </button>
+            </div>
+        );
+    };
+
     const getTotalEarnings = () => {
+        if (active === "Negro") {
+            return filteredNegroRecords.reduce((sum, r) => sum + r.courierTotal, 0);
+        }
         if (active === "Bolt") {
             return filteredRecords.reduce((sum, r) => {
                 if (isBoltRecord(r)) return sum + r.courierTotal;
@@ -501,9 +674,7 @@ const ManagerRecordsDetail = () => {
             }, 0);
         } else if (active === "Glovo") {
             return filteredRecords.reduce((sum, r) => {
-                if (isGlovoRecord(r)) {
-                    return sum + r.courierTotal;
-                }
+                if (isGlovoRecord(r)) return sum + r.courierTotal;
                 return sum;
             }, 0);
         } else if (active === "Wolt") {
@@ -515,9 +686,139 @@ const ManagerRecordsDetail = () => {
         return 0;
     };
 
+    const renderNegroTable = () => {
+        if (negroRecords.length === 0) {
+            return (
+                <div className="text-center py-12">
+                    <p className="text-gray-500">No records found</p>
+                </div>
+            );
+        }
+
+        console.log(filteredNegroRecords);
+
+        return (
+            <div className="overflow-x-auto rounded-lg shadow">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider">Owner</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Target</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Accounts</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Bolt Earning</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Wolt Earning</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Glovo Earning</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total Earning</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Paid Bike<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Bike Difference</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Bike from Company<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Accommodation</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Compensation<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Compensation Reason<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Manager Commission<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
+                            </th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Total w/o Bike Diff</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Total</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredNegroRecords.map((record) => (
+
+                            <tr key={record.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium bg-purple-50 text-purple-800">{getCourierName(record.personalCourierId)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.target)}</td>
+                                <td className="px-4 py-4 text-sm text-gray-900">
+                                    {record.accounts
+                                        ? <div className="flex flex-col gap-1">
+                                            {record.accounts.split('\n').filter(Boolean).map((acc, i) => (
+                                                <span key={i} className="inline-block px-2 py-0.5 rounded bg-gray-100 text-gray-800 text-xs font-medium whitespace-nowrap">
+                                                    {acc.trim()}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        : '-'}
+                                </td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.boltEarning)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.woltEarning)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.glovoEarning)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(record.totalEarning)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderNegroEditableCell(record, 'paidBike', record.paidBike)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.bikeDifference)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderNegroEditableCell(record, 'bikeFromCompany', record.bikeFromCompany)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.accommodation)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderNegroEditableCell(record, 'compensation', record.compensation)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderNegroEditableCell(record, 'compensationReason', record.compensationReason)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderNegroEditableCell(record, 'managerCommission', record.managerCommission)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.courierTotalWithoutBikeDifference)}</td>
+                                <td className="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50">
+                        <tr>
+                            <td className="px-4 py-4 text-sm font-bold text-gray-900">Total ({filteredNegroRecords.length} couriers)</td>
+                            <td className="px-4 py-4"></td>
+                            <td className="px-4 py-4"></td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatNumber(filteredNegroRecords.reduce((s, r) => s + r.boltEarning, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatNumber(filteredNegroRecords.reduce((s, r) => s + r.woltEarning, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatNumber(filteredNegroRecords.reduce((s, r) => s + r.glovoEarning, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatNumber(filteredNegroRecords.reduce((s, r) => s + r.totalEarning, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatInt(filteredNegroRecords.reduce((s, r) => s + r.paidBike, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatInt(filteredNegroRecords.reduce((s, r) => s + r.bikeDifference, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatInt(filteredNegroRecords.reduce((s, r) => s + r.bikeFromCompany, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatInt(filteredNegroRecords.reduce((s, r) => s + r.accommodation, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatInt(filteredNegroRecords.reduce((s, r) => s + r.compensation, 0))}
+                            </td>
+                            <td className="px-4 py-4"></td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatInt(filteredNegroRecords.reduce((s, r) => s + r.managerCommission, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatNumber(filteredNegroRecords.reduce((s, r) => s + r.courierTotalWithoutBikeDifference, 0))}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
+                                {formatInt(filteredNegroRecords.reduce((s, r) => s + r.courierTotal, 0))}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        );
+    };
+
     const renderTable = () => {
         if (loading) {
             return <div className="mt-96"><Spinner size={12} /></div>;
+        }
+
+        if (active === "Negro") {
+            return renderNegroTable();
         }
 
         if (records.length === 0) {
@@ -539,12 +840,7 @@ const ManagerRecordsDetail = () => {
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Row #</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">UID</th>
-                                    <th
-                                        className="px-6 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider cursor-pointer select-none hover:bg-purple-200"
-                                        onClick={toggleOwnerSort}
-                                    >
-                                        Owner {ownerSortDirection === 'asc' ? '↑' : ownerSortDirection === 'desc' ? '↓' : '↕'}
-                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider">Owner</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Adjusted Earnings</th>
@@ -557,28 +853,49 @@ const ManagerRecordsDetail = () => {
                                         Commission %<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
                                     </th>
                                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Total</th>
+                                    <th className="px-8 py-3 text-center text-xs font-medium text-indigo-600 uppercase tracking-wider min-w-[140px]">All Accts Total</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {sortedRecords.map((record) => {
-                                    if (!isBoltRecord(record)) return null;
-                                    return (
-                                        <tr key={record.id} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.rowNumber}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.UID}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium bg-purple-50 text-purple-800">{getCourierName(record.personalCourierId)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.firstname} {record.lastname}</td>
-
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.city}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(record.adjustedEarnings)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.overdueCashDebt)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
-                                        </tr>
-                                    );
-                                })}
+                                {(() => {
+                                    const order: number[] = [];
+                                    const groups: Record<number, BoltRecord[]> = {};
+                                    filteredRecords.forEach(r => {
+                                        if (!isBoltRecord(r)) return;
+                                        if (!groups[r.personalCourierId]) {
+                                            groups[r.personalCourierId] = [];
+                                            order.push(r.personalCourierId);
+                                        }
+                                        groups[r.personalCourierId].push(r);
+                                    });
+                                    return order.flatMap(courierId => {
+                                        const group = groups[courierId];
+                                        return group.map((record, i) => {
+                                            const isFirst = i === 0;
+                                            const groupSize = group.length;
+                                            return (
+                                                <tr key={record.id} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.rowNumber}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.UID}</td>
+                                                    {isFirst && <td rowSpan={groupSize} className="px-6 py-4 text-sm font-medium bg-purple-50 text-purple-800 align-middle">{getCourierName(record.personalCourierId)}</td>}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{record.firstname} {record.lastname}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.city}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(record.adjustedEarnings)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.overdueCashDebt)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
+                                                    {isFirst && (
+                                                        <td rowSpan={groupSize} className="px-8 py-4 text-base font-bold text-indigo-700 text-center align-middle">
+                                                            {groupSize > 1 ? formatInt(courierMultiAccountData.totals[record.personalCourierId]) : '-'}
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            );
+                                        });
+                                    });
+                                })()}
                             </tbody>
                             <tfoot className="bg-gray-50">
                                 <tr>
@@ -599,6 +916,7 @@ const ManagerRecordsDetail = () => {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatCurrency(filteredRecords.reduce((sum, r) => isBoltRecord(r) ? sum + r.courierTotal : sum, 0))}
                                     </td>
+                                    <td className="px-6 py-4"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -613,12 +931,7 @@ const ManagerRecordsDetail = () => {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Name</th>
-                                    <th
-                                        className="px-4 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider cursor-pointer select-none hover:bg-purple-200"
-                                        onClick={toggleOwnerSort}
-                                    >
-                                        Owner {ownerSortDirection === 'asc' ? '↑' : ownerSortDirection === 'desc' ? '↓' : '↕'}
-                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider">Owner</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Payout ID</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Task Fees</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Shift Guarantee</th>
@@ -641,36 +954,58 @@ const ManagerRecordsDetail = () => {
                                         Courier Commission<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
                                     </th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Total</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-indigo-600 uppercase tracking-wider">All Accts Total</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {sortedRecords.map((record) => {
-                                    if (!isWoltRecord(record)) return null;
-                                    return (
-                                        <tr key={record.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.name}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium bg-purple-50 text-purple-800">{getCourierName(record.personalCourierId)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.payoutID}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.taskFees)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.shiftGuarantee)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualTransactions)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.bonus)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.payoutCorrection)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.otherCost)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.additionalCompensation)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.compensationDeductions)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.operationalFeeDeduction)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.activationFeeDeduction)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualGD)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualGDReturn)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.cashOffset)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
-                                        </tr>
-                                    );
-                                })}
+                                {(() => {
+                                    const order: number[] = [];
+                                    const groups: Record<number, WoltRecord[]> = {};
+                                    filteredRecords.forEach(r => {
+                                        if (!isWoltRecord(r)) return;
+                                        if (!groups[r.personalCourierId]) {
+                                            groups[r.personalCourierId] = [];
+                                            order.push(r.personalCourierId);
+                                        }
+                                        groups[r.personalCourierId].push(r);
+                                    });
+                                    return order.flatMap(courierId => {
+                                        const group = groups[courierId];
+                                        return group.map((record, i) => {
+                                            const isFirst = i === 0;
+                                            const groupSize = group.length;
+                                            return (
+                                                <tr key={record.id} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.name}</td>
+                                                    {isFirst && <td rowSpan={groupSize} className="px-4 py-4 text-sm font-medium bg-purple-50 text-purple-800 align-middle">{getCourierName(record.personalCourierId)}</td>}
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.payoutID}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.taskFees)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.shiftGuarantee)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualTransactions)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.bonus)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.payoutCorrection)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.otherCost)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.additionalCompensation)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.compensationDeductions)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.operationalFeeDeduction)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.activationFeeDeduction)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualGD)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.manualGDReturn)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.cashOffset)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
+                                                    {isFirst && (
+                                                        <td rowSpan={groupSize} className="px-8 py-4 text-base font-bold text-indigo-700 text-center align-middle">
+                                                            {groupSize > 1 ? formatInt(courierMultiAccountData.totals[record.personalCourierId]) : '-'}
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            );
+                                        });
+                                    });
+                                })()}
                             </tbody>
                             <tfoot className="bg-gray-50">
                                 <tr>
@@ -721,6 +1056,7 @@ const ManagerRecordsDetail = () => {
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatInt(filteredRecords.reduce((sum, r) => isWoltRecord(r) ? sum + r.courierTotal : sum, 0))}
                                     </td>
+                                    <td className="px-4 py-4"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -736,12 +1072,7 @@ const ManagerRecordsDetail = () => {
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th
-                                        className="px-4 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider cursor-pointer select-none hover:bg-purple-200"
-                                        onClick={toggleOwnerSort}
-                                    >
-                                        Owner {ownerSortDirection === 'asc' ? '↑' : ownerSortDirection === 'desc' ? '↓' : '↕'}
-                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium bg-purple-100 text-purple-700 uppercase tracking-wider">Owner</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Applications</th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Active Account</th>
@@ -770,44 +1101,66 @@ const ManagerRecordsDetail = () => {
                                         Courier Commission<span className="ml-1 text-blue-500 cursor-help" title="Click to edit">✎</span>
                                     </th>
                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Courier Total</th>
+                                    <th className="px-4 py-3 text-right text-xs font-medium text-indigo-600 uppercase tracking-wider">All Accts Total</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {sortedRecords.map((record) => {
-                                    if (!isGlovoRecord(record)) return null;
-                                    const total = record.total ?? calculateGlovoTotal(record.courierTotal, record.tips, record.ctr, record.commission);
-                                    return (
-                                        <tr key={record.id} className="hover:bg-gray-50">
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.city}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.name}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium bg-purple-50 text-purple-800">{getCourierName(record.personalCourierId)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.email}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.cashBalance)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.orders)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.bonus)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.income)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.accountActivationFee)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.appCommission)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(total)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
-                                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
-                                        </tr>
-                                    );
-                                })}
+                                {(() => {
+                                    const order: number[] = [];
+                                    const groups: Record<number, GlovoRecord[]> = {};
+                                    filteredRecords.forEach(r => {
+                                        if (!isGlovoRecord(r)) return;
+                                        if (!groups[r.personalCourierId]) {
+                                            groups[r.personalCourierId] = [];
+                                            order.push(r.personalCourierId);
+                                        }
+                                        groups[r.personalCourierId].push(r);
+                                    });
+                                    return order.flatMap(courierId => {
+                                        const group = groups[courierId];
+                                        return group.map((record, i) => {
+                                            const isFirst = i === 0;
+                                            const groupSize = group.length;
+                                            const total = record.total ?? calculateGlovoTotal(record.courierTotal, record.tips, record.ctr, record.commission);
+                                            return (
+                                                <tr key={record.id} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.city}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{record.name}</td>
+                                                    {isFirst && <td rowSpan={groupSize} className="px-4 py-4 text-sm font-medium bg-purple-50 text-purple-800 align-middle">{getCourierName(record.personalCourierId)}</td>}
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">{record.email}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.cashBalance)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.orders)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.bonus)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.income)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.tips)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.accountActivationFee)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatNumber(record.appCommission)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">-</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">{formatNumber(total)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'ctr', record.ctr)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{renderEditableCell(record, 'commission', record.commission)}</td>
+                                                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">{formatInt(record.courierTotal)}</td>
+                                                    {isFirst && (
+                                                        <td rowSpan={groupSize} className="px-8 py-4 text-base font-bold text-indigo-700 text-center align-middle">
+                                                            {groupSize > 1 ? formatInt(courierMultiAccountData.totals[record.personalCourierId]) : '-'}
+                                                        </td>
+                                                    )}
+                                                </tr>
+                                            );
+                                        });
+                                    });
+                                })()}
                             </tbody>
                             <tfoot className="bg-gray-50">
                                 <tr>
@@ -846,6 +1199,7 @@ const ManagerRecordsDetail = () => {
                                     <td className="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900 text-right">
                                         {formatInt(filteredRecords.reduce((sum, r) => isGlovoRecord(r) ? sum + r.courierTotal : sum, 0))}
                                     </td>
+                                    <td className="px-4 py-4"></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -886,9 +1240,9 @@ const ManagerRecordsDetail = () => {
                 <div>
                     <h2 className="text-2xl font-medium">Manager Records</h2>
                     {managerName && <p className="text-sm text-gray-500 mt-1">Manager: {managerName}</p>}
-                    {modifiedFieldsCount > 0 && (
+                    {currentModifiedCount > 0 && (
                         <p className="text-sm text-blue-600 mt-1 font-semibold">
-                            {modifiedFieldsCount} unsaved change{modifiedFieldsCount > 1 ? 's' : ''}
+                            {currentModifiedCount} unsaved change{currentModifiedCount > 1 ? 's' : ''}
                         </p>
                     )}
                 </div>
@@ -927,6 +1281,17 @@ const ManagerRecordsDetail = () => {
                                 <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-yellow-500 bg-white rounded-full text-lg shadow-md" />
                             )}
                         </button>
+
+                        <button
+                            onClick={() => setActive("Negro")}
+                            className={`relative inline-flex items-center justify-center transition-all duration-200 px-3 py-1 rounded-lg font-semibold text-sm ${active === "Negro" ? "scale-110 bg-gray-800 text-white shadow-md" : "scale-100 opacity-60 hover:opacity-100 bg-gray-200 text-gray-700"}`}
+                            title="Negro Report"
+                        >
+                            Negro
+                            {active === "Negro" && (
+                                <MdFiberManualRecord className="absolute -bottom-1 -right-1 text-gray-500 bg-white rounded-full text-lg shadow-md" />
+                            )}
+                        </button>
                     </div>
 
                     <button
@@ -942,12 +1307,12 @@ const ManagerRecordsDetail = () => {
                 <div className="flex items-center gap-2">
                     <Button
                         variant="success"
-                        disabled={modifiedFieldsCount === 0 || saving}
+                        disabled={currentModifiedCount === 0 || saving}
                         onClickAction={handleSaveChanges}
                     >
-                        {saving ? "Saving..." : `Save${modifiedFieldsCount > 0 ? ` (${modifiedFieldsCount})` : ''}`}
+                        {saving ? "Saving..." : `Save${currentModifiedCount > 0 ? ` (${currentModifiedCount})` : ''}`}
                     </Button>
-                    <Button onClickAction={() => navigate(`/reports/${reportId}/reports-by-managers/${managerId}/transactions${managerName ? `?managerName=${managerName}` : ''}`)}>Transactions</Button>
+                    <Button onClickAction={() => navigate(`/reports/${reportId}/reports-by-managers/${managerReportId}/transactions${managerName ? `?managerName=${managerName}` : ''}`)}>Transactions</Button>
                     <Button onClickAction={() => navigate(-1)}>Back</Button>
                 </div>
 

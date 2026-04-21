@@ -211,14 +211,13 @@ export const EditAccountModal: FC<EditAccountModalPropsInterface> = ({
                     />
                     {validationErrors?.phoneNumber && <p className="text-red-400 text-sm">{validationErrors.phoneNumber}</p>}
 
-                    <label htmlFor="email" className="text-sm -mb-1.25">Email</label>
+                    <label htmlFor="email" className="text-sm -mb-1.25">Email <span className="text-gray-400 text-xs font-normal">(optional)</span></label>
                     <Input
                         nameValue="email"
                         placeholderValue="example@email.com"
                         inputValue={emailInput}
                         onChangeAction={(e: any) => setEmailInput(e.target.value)}
                         type="email"
-                        required
                     />
                     {validationErrors?.email && <p className="text-red-400 text-sm">{validationErrors.email}</p>}
                 </div>

@@ -78,6 +78,7 @@ const Couriers = () => {
     // --- lookups ---
     const getCityName = (id: number) => cities.find(c => c.id === id)?.name ?? '';
     const getManagerName = (id: number) => { const m = managers.find(m => m.id === id); return m ? `${m.firstname} ${m.lastname}` : ''; };
+    const getTag = (id: number) => tags.find(t => t.id === id);
     const getTagName = (id: number) => tags.find(t => t.id === id)?.name ?? '';
 
     const uniqueNationalities = useMemo(() =>
@@ -198,8 +199,10 @@ const Couriers = () => {
         } catch (e: any) { showAlert('error', e.message); }
     };
 
+    console.log(couriers);
+
     return (
-        <div className="w-full space-y-6">
+        <div className="w-full min-h-screen space-y-6">
             {alert.on && (
                 <div className={`fixed top-5 right-5 z-100 max-w-sm w-full shadow-xl rounded-2xl p-4 animate-toast
                     ${alert.type === 'error' ? 'bg-(--error-bg) text-(--error-text)' : 'bg-green-100 text-green-700'}`}>
@@ -448,11 +451,14 @@ const Couriers = () => {
                                 <td className="px-4 py-3">
                                     <div className="flex flex-wrap gap-1 max-w-50">
                                         {c.tagIds?.length
-                                            ? c.tagIds.map(id => (
-                                                <span key={id} className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-gray-700">
-                                                    {getTagName(id)}
-                                                </span>
-                                            ))
+                                            ? c.tagIds.map(id => {
+                                                const tag = getTag(id);
+                                                return (
+                                                    <span key={id} className="px-2 py-0.5 text-xs font-medium rounded-full" style={{ backgroundColor: tag?.colour + '15', color: tag?.colour }}>
+                                                        {tag?.name}
+                                                    </span>
+                                                );
+                                            })
                                             : <span className="text-xs text-gray-400">—</span>
                                         }
                                     </div>

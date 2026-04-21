@@ -95,7 +95,7 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
                     {validationErrors?.phoneNumber && <p className="text-red-400 text-sm">{validationErrors.phoneNumber}</p>}
 
                     <label htmlFor="nationality" className="text-sm -mb-1.25">Nationality</label>
-                    <Input nameValue="nationality" placeholderValue="Romanian" inputValue={nationalityInput} onChangeAction={(e: any) => setNationalityInput(e.target.value)} required />
+                    <Input nameValue="nationality" placeholderValue="Romania" inputValue={nationalityInput} onChangeAction={(e: any) => setNationalityInput(e.target.value)} required />
                     {validationErrors?.nationality && <p className="text-red-400 text-sm">{validationErrors.nationality}</p>}
 
                     <label htmlFor="cnp" className="text-sm -mb-1.25">CNP <span className="text-gray-400">(Optional)</span></label>
@@ -187,9 +187,13 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
                                         type="button"
                                         onClick={() => handleTagToggle(tag.id)}
                                         className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${selectedTags.includes(tag.id)
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                            ? 'text-white'
+                                            : 'hover:opacity-80'
                                             }`}
+                                        style={{
+                                            backgroundColor: selectedTags.includes(tag.id) ? tag.colour : tag.colour + '30',
+                                            color: selectedTags.includes(tag.id) ? 'white' : tag.colour,
+                                        }}
                                     >
                                         {tag.name}
                                     </button>

@@ -5,7 +5,7 @@ import Input from "./Input";
 
 interface AddTagModalPropsInterface {
     onClose: () => void;
-    addTag: (name: string, description: string) => void;
+    addTag: (name: string, description: string, colour: string) => void;
     validationErrors: Record<string, string> | null
 }
 
@@ -13,6 +13,7 @@ export const AddTagModal: FC<AddTagModalPropsInterface> = ({ onClose, addTag, va
 
     const [nameInput, setNameInput] = useState<string>('');
     const [descriptionInput, setDescriptionInput] = useState<string>('');
+    const [colourInput, setColourInput] = useState<string>('#3B82F6');
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -43,6 +44,18 @@ export const AddTagModal: FC<AddTagModalPropsInterface> = ({ onClose, addTag, va
                         className="bg-gray-100 border border-transparent rounded-2xl py-3 px-4 text-sm transition-all duration-300 ease-out focus:bg-white focus:border-black focus:outline-none resize-none"
                     />
                     {validationErrors?.description && <p className="text-red-400 text-sm">{validationErrors.description}</p>}
+
+                    <label htmlFor="colour" className="text-sm -mb-1.25">Tag Color</label>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="color"
+                            name="colour"
+                            value={colourInput}
+                            onChange={(e) => setColourInput(e.target.value)}
+                            className="w-12 h-10 rounded-lg cursor-pointer border border-gray-200"
+                        />
+                        <span className="text-sm text-gray-600">{colourInput}</span>
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-2 mt-6">
@@ -53,7 +66,7 @@ export const AddTagModal: FC<AddTagModalPropsInterface> = ({ onClose, addTag, va
                         Cancel
                     </Button>
                     <Button
-                        onClickAction={() => addTag(nameInput.trim(), descriptionInput.trim())}
+                        onClickAction={() => addTag(nameInput.trim(), descriptionInput.trim(), colourInput)}
                     >
                         Save
                     </Button>
