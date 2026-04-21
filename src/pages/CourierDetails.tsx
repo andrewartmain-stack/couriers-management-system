@@ -49,10 +49,6 @@ const CourierDetails = () => {
         }, 3000);
     };
 
-    const getTagName = (id: number) => {
-        return tags.find(tag => tag.id === id)?.name || '';
-    }
-
     const getTag = (id: number) => {
         return tags.find(tag => tag.id === id);
     }
