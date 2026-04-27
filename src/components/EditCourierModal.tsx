@@ -189,7 +189,7 @@ export const EditCourierModal: FC<EditCourierModalPropsInterface> = ({
                                             ))}
                                         </div>
                                     </div>
-                                )}\n                            </div>
+                                )}                            </div>
                         </>
                     )}
 
@@ -202,14 +202,11 @@ export const EditCourierModal: FC<EditCourierModalPropsInterface> = ({
                                         key={tag.id}
                                         type="button"
                                         onClick={() => handleTagToggle(tag.id)}
-                                        className={`px-3 py-1 text-xs font-medium rounded-full transition-colors ${selectedTags.includes(tag.id)
-                                                ? 'text-white'
-                                                : 'hover:opacity-80'
+                                        className={`px-3 py-1 text-xs font-medium rounded-full transition-colors  ${selectedTags.includes(tag.id)
+                                            ? 'text-white bg-black'
+                                            : 'hover:opacity-80 bg-gray-200'
                                             }`}
-                                        style={{
-                                            backgroundColor: selectedTags.includes(tag.id) ? tag.colour : tag.colour + '30',
-                                            color: selectedTags.includes(tag.id) ? 'white' : tag.colour,
-                                        }}
+
                                     >
                                         {tag.name}
                                     </button>

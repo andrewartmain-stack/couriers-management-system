@@ -76,7 +76,7 @@ export const AddCourierModal: FC<AddCourierModalPropsInterface> = ({ onClose, ad
             />
 
             {/* Modal */}
-            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6 h-[700px] overflow-y-scroll">
+            <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md p-6 max-h-screen overflow-y-scroll">
                 <h2 className="text-lg font-semibold mb-4">
                     Add Courier
                 </h2>
