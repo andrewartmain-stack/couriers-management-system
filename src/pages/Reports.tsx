@@ -18,6 +18,8 @@ const Reports = () => {
     const [isStartNewReportModalOpen, setIsStartNewReportModalOpen] = useState(false);
     const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
     const [reports, setReports] = useState<Report[]>([]);
+    const [negroSums, setNegroSums] = useState<Record<number, number>>({});
+    const [negroSumsLoading, setNegroSumsLoading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'OPENED' | 'CLOSED'>('all');
@@ -122,6 +124,41 @@ const Reports = () => {
 
         fetchData();
     }, [alert.type === 'success' && alert.isActive === true]);
+
+    useEffect(() => {
+        if (reports.length === 0) return;
+
+        const fetchNegroSums = async () => {
+            setNegroSumsLoading(true);
+            const sums: Record<number, number> = {};
+
+            await Promise.all(reports.map(async (report) => {
+                try {
+                    const mrResponse = await fetch(
+                        `${BASE_API}/manager-reports/report/${report.id}`,
+                        { headers: getAuthHeaders() }
+                    );
+                    const managerReports: { id: number }[] = await mrResponse.json();
+
+                    const recordArrays = await Promise.all(
+                        managerReports.map(mr =>
+                            fetch(`${BASE_API}/records/negro/manager-report/${mr.id}`, { headers: getAuthHeaders() })
+                                .then(r => r.json())
+                        )
+                    );
+
+                    sums[report.id] = recordArrays.flat().reduce((sum: number, r: any) => sum + (r.courierTotal || 0), 0);
+                } catch {
+                    sums[report.id] = 0;
+                }
+            }));
+
+            setNegroSums(sums);
+            setNegroSumsLoading(false);
+        };
+
+        fetchNegroSums();
+    }, [reports]);
 
     const filtered = reports.filter(report => {
         if (statusFilter !== 'all' && report.status !== statusFilter) return false;
@@ -259,6 +296,13 @@ const Reports = () => {
                                     <div>Bolt: {Math.round(report.boltSum)}</div>
                                     <div>Wolt: {Math.round(report.woltSum)}</div>
                                     <div>Glovo: {Math.round(report.glovoSum)}</div>
+                                    <div className="flex items-center gap-1.5">
+                                        Negro:
+                                        {negroSumsLoading
+                                            ? <span className="inline-block w-3 h-3 border-2 border-gray-300 border-t-gray-500 rounded-full animate-spin" />
+                                            : <span>{Math.round(negroSums[report.id] ?? 0)}</span>
+                                        }
+                                    </div>
                                 </div>
 
                                 {/* Totals */}
